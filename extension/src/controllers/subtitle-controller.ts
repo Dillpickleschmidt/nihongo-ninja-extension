@@ -13,7 +13,7 @@ import {
     allTextSubtitleSettings,
 } from '@project/common/settings';
 import { SubtitleCollection, SubtitleSlice } from '@project/common/subtitle-collection';
-import { computeStyleString, surroundingSubtitles } from '@project/common/util';
+import { computeStyleString, computeContainerBackgroundStyle, surroundingSubtitles } from '@project/common/util';
 import i18n from 'i18next';
 import {
     CachingElementOverlay,
@@ -210,6 +210,22 @@ export default class SubtitleController {
 
     private _computeClassesForTrack(settings: TextSubtitleSettings) {
         return settings.subtitleBlur ? 'asbplayer-subtitles-blurred' : '';
+    }
+
+    private _applyBackgroundToContainers() {
+        if (!this.subtitleSettings) return;
+
+        const settings = allTextSubtitleSettings(this.subtitleSettings)[0];
+        if (!settings) return;
+
+        const backgroundStyle = computeContainerBackgroundStyle(settings);
+
+        // Apply to existing subtitle containers
+        document.querySelectorAll('.asbplayer-subtitles').forEach((el) => {
+            if (el instanceof HTMLElement) {
+                el.style.cssText = backgroundStyle;
+            }
+        });
     }
 
     private _getSubtitleTrackAlignment(trackIndex: number) {
@@ -653,6 +669,8 @@ export default class SubtitleController {
 
     private _setSubtitlesHtml(subtitlestOverlay: ElementOverlay, htmls: KeyedHtml[]) {
         subtitlestOverlay.setHtml(htmls);
+        // Apply background after HTML is rendered
+        this._applyBackgroundToContainers();
     }
 
     private _appendSubtitlesHtml(html: string) {

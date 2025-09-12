@@ -519,8 +519,8 @@ export default class SubtitleReader {
             text = this._decodeHTML(text);
         }
 
-        // Analyze Japanese text via background worker
-        if (typeof browser !== 'undefined' && browser.runtime) {
+        // Analyze Japanese text via background worker (extension context only)
+        if (typeof (globalThis as any).browser !== 'undefined' && (globalThis as any).browser?.runtime) {
             this._analyzeJapaneseText(text);
         }
 
@@ -547,7 +547,7 @@ export default class SubtitleReader {
     private _analyzeJapaneseText(text: string) {
         if (!/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text)) return;
 
-        browser.runtime
+        (globalThis as any).browser.runtime
             .sendMessage({
                 sender: 'kagome-analysis',
                 message: { command: 'kagome-analysis', text },

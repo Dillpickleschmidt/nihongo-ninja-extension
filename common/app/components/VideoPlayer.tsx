@@ -18,6 +18,7 @@ import {
 import {
     MiscSettings,
     SubtitleSettings,
+    TextSubtitleSettings,
     AnkiSettings,
     AsbplayerSettings,
     SubtitleAlignment,
@@ -31,6 +32,7 @@ import {
     mockSurroundingSubtitles,
     seekWithNudge,
     surroundingSubtitlesAroundInterval,
+    computeContainerBackgroundStyle,
 } from '@project/common/util';
 import { SubtitleCollection } from '@project/common/subtitle-collection';
 import SubtitleTextImage from '@project/common/components/SubtitleTextImage';
@@ -158,7 +160,8 @@ const showingSubtitleHtml = (
     videoRef: MutableRefObject<ExperimentalHTMLVideoElement | undefined>,
     subtitleStyles: string,
     subtitleClasses: string,
-    imageBasedSubtitleScaleFactor: number
+    imageBasedSubtitleScaleFactor: number,
+    subtitleSettings: SubtitleSettings
 ) => {
     if (subtitle.textImage) {
         const imageScale =
@@ -182,7 +185,12 @@ const showingSubtitleHtml = (
     const wrappedText = lines
         .map((line) => `<p class="${allSubtitleClasses}" style="${subtitleStyles}">${line}</p>`)
         .join('');
-    return wrappedText;
+
+    // Apply unified background container (same approach as browser extension)
+    const trackSettings = textSubtitleSettingsForTrack(subtitleSettings, subtitle.track) as TextSubtitleSettings;
+    const backgroundStyle = computeContainerBackgroundStyle(trackSettings);
+
+    return backgroundStyle ? `<div style="${backgroundStyle}">${wrappedText}</div>` : wrappedText;
 };
 
 interface CachedShowingSubtitleProps {
@@ -1490,9 +1498,10 @@ export default function VideoPlayer({
                     videoRef,
                     trackStyles[subtitle.track]?.styleString ?? trackStyles[0].styleString,
                     trackStyles[subtitle.track]?.classes ?? trackStyles[0].classes,
-                    subtitleSettings.imageBasedSubtitleScaleFactor
+                    subtitleSettings.imageBasedSubtitleScaleFactor,
+                    subtitleSettings
                 ),
-            [trackStyles, subtitleSettings.imageBasedSubtitleScaleFactor]
+            [trackStyles, subtitleSettings.imageBasedSubtitleScaleFactor, subtitleSettings]
         )
     );
 

@@ -283,12 +283,13 @@ export function computeStyles({
             `0 0 ${subtitleShadowThickness}px ${subtitleShadowColor}, 0 0 ${subtitleShadowThickness}px ${subtitleShadowColor}, 0 0 ${subtitleShadowThickness}px ${subtitleShadowColor}, 0 0 ${subtitleShadowThickness}px ${subtitleShadowColor}`;
     }
 
-    if (subtitleBackgroundOpacity > 0) {
-        const opacity = subtitleBackgroundOpacity;
-        const color = subtitleBackgroundColor;
-        const { r, g, b } = hexToRgb(color);
-        styles['backgroundColor'] = `rgba(${r}, ${g}, ${b}, ${opacity})`;
-    }
+    // Background now applied to container instead of individual elements
+    // if (subtitleBackgroundOpacity > 0) {
+    //     const opacity = subtitleBackgroundOpacity;
+    //     const color = subtitleBackgroundColor;
+    //     const { r, g, b } = hexToRgb(color);
+    //     styles['backgroundColor'] = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    // }
 
     if (subtitleFontFamily && subtitleFontFamily.length > 0) {
         styles['fontFamily'] = `'${subtitleFontFamily}'`;
@@ -347,6 +348,17 @@ export function computeStyleString(styleSettings: TextSubtitleSettings) {
     }
 
     return styleList.join(';');
+}
+
+export function computeContainerBackgroundStyle(styleSettings: TextSubtitleSettings): string {
+    const { subtitleBackgroundOpacity, subtitleBackgroundColor } = styleSettings;
+
+    if (subtitleBackgroundOpacity > 0) {
+        const { r, g, b } = hexToRgb(subtitleBackgroundColor);
+        return `background-color: rgba(${r}, ${g}, ${b}, ${subtitleBackgroundOpacity}); padding: 4px 8px; border-radius: 4px; display: inline-block;`;
+    }
+
+    return '';
 }
 
 // https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
