@@ -60,6 +60,7 @@ import RequestCopyHistoryHandler from '@/handlers/asbplayerv2/request-copy-histo
 import DeleteCopyHistoryHandler from '@/handlers/asbplayerv2/delete-copy-history-handler';
 import ClearCopyHistoryHandler from '@/handlers/asbplayerv2/clear-copy-history-handler';
 import SaveCopyHistoryHandler from '@/handlers/asbplayerv2/save-copy-history-handler';
+import KagomeAnalysisHandler from '@/handlers/kagome/kagome-analysis-handler';
 
 export default defineBackground(() => {
     if (!isFirefoxBuild) {
@@ -158,6 +159,7 @@ export default defineBackground(() => {
         new RequestModelHandler(),
         new CurrentTabHandler(),
         new MobileOverlayForwarderHandler(),
+        new KagomeAnalysisHandler(),
     ];
 
     browser.runtime.onMessage.addListener((request: Command<Message>, sender, sendResponse) => {

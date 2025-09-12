@@ -89,6 +89,7 @@ export default defineConfig({
                         'video-select-ui.js',
                         'notification-ui.js',
                         'mobile-video-overlay-ui.html',
+                        'kagome/*',
                     ],
                     matches: ['<all_urls>'],
                 },

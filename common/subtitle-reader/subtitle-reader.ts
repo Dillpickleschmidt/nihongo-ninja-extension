@@ -519,6 +519,11 @@ export default class SubtitleReader {
             text = this._decodeHTML(text);
         }
 
+        // Analyze Japanese text via background worker
+        if (typeof browser !== 'undefined' && browser.runtime) {
+            this._analyzeJapaneseText(text);
+        }
+
         return text;
     }
 
@@ -537,5 +542,16 @@ export default class SubtitleReader {
 
     async filesToSrt(files: File[]) {
         return this.subtitlesToSrt(await this.subtitles(files));
+    }
+
+    private _analyzeJapaneseText(text: string) {
+        if (!/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text)) return;
+
+        browser.runtime
+            .sendMessage({
+                sender: 'kagome-analysis',
+                message: { command: 'kagome-analysis', text },
+            })
+            .catch(() => {});
     }
 }
