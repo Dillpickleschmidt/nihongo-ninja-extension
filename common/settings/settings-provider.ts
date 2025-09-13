@@ -25,7 +25,7 @@ const defaultSubtitleTextSettings = {
     subtitleShadowColor: '#000000',
     subtitleBackgroundColor: '#000000',
     subtitleBackgroundOpacity: 0,
-    subtitleFontFamily: '',
+    subtitleFontFamily: 'Noto Sans JP',
     subtitlePreview: 'アあ安Aa',
     subtitleCustomStyles: [],
     subtitleBlur: false,
