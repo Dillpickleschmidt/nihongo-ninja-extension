@@ -1,12 +1,12 @@
 import { Command, Message } from '@project/common';
 
-declare global {
-    function kagome_tokenize(text: string): any[];
+interface KagomeAnalysisMessage extends Message {
+    readonly command: 'kagome-analysis';
+    readonly text: string;
 }
 
-interface KagomeAnalysisMessage extends Message {
-    command: 'kagome-analysis';
-    text: string;
+declare global {
+    function kagome_tokenize(text: string): any[];
 }
 
 interface KagomeAnalysisResult {
@@ -625,7 +625,8 @@ async function loadKagomeWasm() {
             initGoRuntime();
 
             console.log('[Kagome Background] Loading WASM...');
-            const wasmUrl = chrome.runtime.getURL('kagome/kagome.wasm');
+            const browserAPI = (self as any).browser || (self as any).chrome;
+            const wasmUrl = browserAPI.runtime.getURL('kagome/kagome.wasm');
             const wasmResponse = await fetch(wasmUrl);
             const wasmBytes = await wasmResponse.arrayBuffer();
 
@@ -649,7 +650,7 @@ async function loadKagomeWasm() {
 
 export default class KagomeAnalysisHandler {
     get sender() {
-        return 'kagome-analysis';
+        return 'asbplayer-video';
     }
 
     get command() {
@@ -657,15 +658,23 @@ export default class KagomeAnalysisHandler {
     }
 
     handle(
-        command: Command<KagomeAnalysisMessage>,
-        sender: chrome.runtime.MessageSender,
+        command: Command<Message>,
+        sender: any, // Compatible with both chrome.runtime.MessageSender and browser.runtime.MessageSender
         sendResponse: (response: KagomeAnalysisResult) => void
     ): boolean {
-        console.log('[Kagome Background] Received request:', command);
-
-        this.analyzeText(command.message.text)
+        const kagomeMessage = command.message as KagomeAnalysisMessage;
+        this.analyzeText(kagomeMessage.text)
             .then((tokens) => {
+                console.log('[Kagome Background] Parsing:', kagomeMessage.text);
                 console.log('[Kagome Background] Analysis complete:', tokens);
+
+                // Log individual tokens/words
+                if (tokens && Array.isArray(tokens)) {
+                    tokens.forEach((token, index) => {
+                        console.log(`[Kagome Background] Token ${index + 1}:`, token?.surface_form || token);
+                    });
+                }
+
                 sendResponse({ tokens });
             })
             .catch((error) => {
@@ -677,20 +686,16 @@ export default class KagomeAnalysisHandler {
     }
 
     private async analyzeText(text: string): Promise<any[]> {
-        console.log('[Kagome Background] Analyzing text:', text);
-
         // Check if text contains Japanese characters
         if (!/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text)) {
-            console.log('[Kagome Background] No Japanese characters detected, skipping analysis');
+            console.warn('[Kagome Background] No Japanese characters detected, skipping analysis');
             return [];
         }
 
-        console.log('[Kagome Background] Japanese detected, ensuring WASM loaded...');
         await loadKagomeWasm();
 
         // Call the Kagome tokenize function
         if (typeof self.kagome_tokenize === 'function') {
-            console.log('[Kagome Background] Calling kagome_tokenize...');
             const tokens = self.kagome_tokenize(text);
             return tokens || [];
         } else {
@@ -698,4 +703,3 @@ export default class KagomeAnalysisHandler {
         }
     }
 }
-

@@ -147,6 +147,7 @@ export default defineBackground(() => {
         new AudioBase64Handler(audioRecorder),
         new UpdateMobileOverlayModelHandler(),
         new RefreshSettingsHandler(tabRegistry, settings),
+        new KagomeAnalysisHandler(),
         new VideoToAsbplayerCommandForwardingHandler(tabRegistry),
         new AsbplayerToVideoCommandForwardingHandler(),
         new AsbplayerHeartbeatHandler(tabRegistry),
@@ -159,7 +160,6 @@ export default defineBackground(() => {
         new RequestModelHandler(),
         new CurrentTabHandler(),
         new MobileOverlayForwarderHandler(),
-        new KagomeAnalysisHandler(),
     ];
 
     browser.runtime.onMessage.addListener((request: Command<Message>, sender, sendResponse) => {

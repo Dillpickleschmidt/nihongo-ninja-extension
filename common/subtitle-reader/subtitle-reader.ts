@@ -519,12 +519,30 @@ export default class SubtitleReader {
             text = this._decodeHTML(text);
         }
 
-        // Analyze Japanese text via background worker (extension context only)
-        if (typeof (globalThis as any).browser !== 'undefined' && (globalThis as any).browser?.runtime) {
-            this._analyzeJapaneseText(text);
-        }
+        // Try kagome analysis if available
+        this._tryKagomeAnalysis(text);
 
         return text;
+    }
+
+    private _tryKagomeAnalysis(text: string) {
+        if (!/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text)) return;
+
+        // If kagome is loaded globally, use it directly
+        if (typeof (globalThis as any).kagome_tokenize === 'function') {
+            try {
+                const tokens = (globalThis as any).kagome_tokenize(text);
+                console.log('[Kagome] Parsing:', text);
+                console.log('[Kagome] Analysis complete:', tokens);
+                if (tokens && Array.isArray(tokens)) {
+                    tokens.forEach((token, index) => {
+                        console.log(`[Kagome] Token ${index + 1}:`, token?.base_form || token);
+                    });
+                }
+            } catch (error) {
+                console.error('[Kagome] Analysis error:', error);
+            }
+        }
     }
 
     subtitlesToSrt(subtitles: SubtitleNode[]) {
@@ -542,16 +560,5 @@ export default class SubtitleReader {
 
     async filesToSrt(files: File[]) {
         return this.subtitlesToSrt(await this.subtitles(files));
-    }
-
-    private _analyzeJapaneseText(text: string) {
-        if (!/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text)) return;
-
-        (globalThis as any).browser.runtime
-            .sendMessage({
-                sender: 'kagome-analysis',
-                message: { command: 'kagome-analysis', text },
-            })
-            .catch(() => {});
     }
 }

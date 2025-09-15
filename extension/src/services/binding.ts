@@ -1407,6 +1407,13 @@ export default class Binding {
         this._synced = true;
         this._syncedTimestamp = Date.now();
 
+        // Analyze Japanese text in subtitles
+        for (const subtitle of subtitles) {
+            if (subtitle.text) {
+                this._analyzeJapaneseText(subtitle.text);
+            }
+        }
+
         if (this.video.paused) {
             this.mobileVideoOverlayController.show();
         }
@@ -1543,5 +1550,17 @@ export default class Binding {
         }
 
         return window.location !== window.parent.location ? document.referrer : document.location.href;
+    }
+
+    private _analyzeJapaneseText(text: string) {
+        if (!/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text)) return;
+
+        const command = {
+            sender: 'asbplayer-video',
+            message: { command: 'kagome-analysis', text },
+            src: this.video.src,
+        };
+
+        browser.runtime.sendMessage(command).catch(() => {});
     }
 }
