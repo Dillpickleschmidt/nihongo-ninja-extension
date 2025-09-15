@@ -192,3 +192,10 @@
 
 .asbplayer-mobile-video-overlay {
 }
+
+/* Kagome token debug borders */
+.asbplayer-kagome-token {
+    border: 1px solid red !important;
+    display: inline-block !important;
+    margin: 0 1px !important;
+}

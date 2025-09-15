@@ -20,6 +20,17 @@ export interface SubtitleTextImage {
     readonly image: DimensionsModel;
 }
 
+export interface KagomeToken {
+    readonly word_id: number;
+    readonly word_position: number;
+    readonly surface_form: string;
+    readonly word_type: string;
+    readonly pos: string;
+    readonly base_form: string;
+    readonly reading: string;
+    readonly pronunciation: string;
+}
+
 export interface SubtitleModel {
     readonly text: string;
     readonly textImage?: SubtitleTextImage;
@@ -28,6 +39,7 @@ export interface SubtitleModel {
     readonly originalStart: number;
     readonly originalEnd: number;
     readonly track: number;
+    readonly kagomeTokens?: KagomeToken[];
 }
 
 export interface CardTextFieldValues {

@@ -462,7 +462,7 @@ export default class SubtitleController {
                             </div>
                         `;
                     } else {
-                        return this._buildTextHtml(subtitle.text, subtitle.track);
+                        return this._buildSubtitleTextHtml(subtitle);
                     }
                 },
                 key: String(subtitle.index),
@@ -474,6 +474,22 @@ export default class SubtitleController {
         return `<span data-track="${track ?? 0}" class="${this._subtitleClasses(track)}" style="${this._subtitleStyles(
             track
         )}">${text}</span>`;
+    }
+
+    private _buildSubtitleTextHtml(subtitle: SubtitleModelWithIndex) {
+        const { text, track, kagomeTokens } = subtitle;
+
+        // If we have kagome tokens, render each token with red border
+        if (kagomeTokens && kagomeTokens.length > 0) {
+            const tokenHtml = kagomeTokens
+                .filter((token) => token && token.surface_form)
+                .map((token) => `<span class="asbplayer-kagome-token">${token.surface_form}</span>`)
+                .join('');
+            return this._buildTextHtml(tokenHtml, track);
+        }
+
+        // Fallback to normal rendering
+        return this._buildTextHtml(text, track);
     }
 
     unbind() {

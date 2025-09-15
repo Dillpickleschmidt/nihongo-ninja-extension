@@ -1407,12 +1407,8 @@ export default class Binding {
         this._synced = true;
         this._syncedTimestamp = Date.now();
 
-        // Analyze Japanese text in subtitles
-        for (const subtitle of subtitles) {
-            if (subtitle.text) {
-                this._analyzeJapaneseText(subtitle.text);
-            }
-        }
+        // Batch analyze all Japanese subtitles at once
+        this._batchAnalyzeSubtitles(subtitles);
 
         if (this.video.paused) {
             this.mobileVideoOverlayController.show();
@@ -1552,15 +1548,47 @@ export default class Binding {
         return window.location !== window.parent.location ? document.referrer : document.location.href;
     }
 
-    private _analyzeJapaneseText(text: string) {
-        if (!/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text)) return;
+    private _batchAnalyzeSubtitles(subtitles: SubtitleModelWithIndex[]) {
+        // Filter to only Japanese subtitles
+        const japaneseSubtitles = subtitles.filter(
+            (s) => s.text && /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(s.text)
+        );
 
+        console.log('[Binding] Batch analyzing', japaneseSubtitles.length, 'Japanese subtitles');
+
+        // Create batch command with all texts
         const command = {
             sender: 'asbplayer-video',
-            message: { command: 'kagome-analysis', text },
+            message: {
+                command: 'kagome-analysis',
+                texts: japaneseSubtitles.map((s) => s.text),
+            },
             src: this.video.src,
         };
 
-        browser.runtime.sendMessage(command).catch(() => {});
+        // Fire-and-forget - don't block subtitle loading
+        browser.runtime
+            .sendMessage(command)
+            .then((response) => {
+                if (response && response.results) {
+                    // Update all subtitles with their tokens
+                    response.results.forEach((result: any, index: number) => {
+                        if (result.tokens) {
+                            (japaneseSubtitles[index] as any).kagomeTokens = result.tokens;
+                        }
+                    });
+
+                    // Single cache refresh after all tokens are stored
+                    this.subtitleController.cacheHtml();
+
+                    // Refresh currently displayed subtitles to show tokens immediately
+                    this.subtitleController.refresh();
+
+                    console.log('[Binding] Batch kagome analysis complete, cache refreshed');
+                }
+            })
+            .catch((error) => {
+                console.warn('[Binding] Batch kagome analysis failed:', error);
+            });
     }
 }

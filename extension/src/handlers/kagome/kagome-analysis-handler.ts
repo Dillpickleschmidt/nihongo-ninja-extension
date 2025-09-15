@@ -2,16 +2,11 @@ import { Command, Message } from '@project/common';
 
 interface KagomeAnalysisMessage extends Message {
     readonly command: 'kagome-analysis';
-    readonly text: string;
+    readonly texts: string[];
 }
 
 declare global {
     function kagome_tokenize(text: string): any[];
-}
-
-interface KagomeAnalysisResult {
-    tokens: any[];
-    error?: string;
 }
 
 let kagomeLoaded = false;
@@ -660,29 +655,36 @@ export default class KagomeAnalysisHandler {
     handle(
         command: Command<Message>,
         sender: any, // Compatible with both chrome.runtime.MessageSender and browser.runtime.MessageSender
-        sendResponse: (response: KagomeAnalysisResult) => void
+        sendResponse: (response: any) => void
     ): boolean {
         const kagomeMessage = command.message as KagomeAnalysisMessage;
-        this.analyzeText(kagomeMessage.text)
-            .then((tokens) => {
-                console.log('[Kagome Background] Parsing:', kagomeMessage.text);
-                console.log('[Kagome Background] Analysis complete:', tokens);
 
-                // Log individual tokens/words
-                if (tokens && Array.isArray(tokens)) {
-                    tokens.forEach((token, index) => {
-                        console.log(`[Kagome Background] Token ${index + 1}:`, token?.surface_form || token);
-                    });
-                }
+        console.log('[Kagome Background] Batch analyzing', kagomeMessage.texts.length, 'texts');
 
-                sendResponse({ tokens });
+        Promise.all(
+            kagomeMessage.texts.map((text) =>
+                this.analyzeText(text).catch((error) => {
+                    console.warn('[Kagome Background] Failed to analyze:', text, error);
+                    return [];
+                })
+            )
+        )
+            .then((results) => {
+                const response = {
+                    results: results.map((tokens, index) => ({
+                        text: kagomeMessage.texts[index],
+                        tokens,
+                    })),
+                };
+                console.log('[Kagome Background] Batch analysis complete:', results.length, 'results');
+                sendResponse(response);
             })
             .catch((error) => {
-                console.error('[Kagome Background] Error occurred:', error);
-                sendResponse({ tokens: [], error: error.message });
+                console.error('[Kagome Background] Batch analysis failed:', error);
+                sendResponse({ results: [] });
             });
 
-        return true; // Indicates we will send response asynchronously
+        return true;
     }
 
     private async analyzeText(text: string): Promise<any[]> {
