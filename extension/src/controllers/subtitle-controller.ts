@@ -492,7 +492,9 @@ export default class SubtitleController {
                 .filter((token) => token && token.surface_form)
                 .map((token) => {
                     const tokenData = JSON.stringify(token).replace(/"/g, '&quot;');
-                    return `<span class="asbplayer-kagome-token" data-token="${tokenData}">${token.surface_form}</span>`;
+                    // Don't add interactive styling to symbols/punctuation
+                    const className = token.pos.startsWith('記号') ? '' : 'asbplayer-kagome-token';
+                    return `<span class="${className}" data-token="${tokenData}">${token.surface_form}</span>`;
                 })
                 .join('');
             return this._buildTextHtml(tokenHtml, track);

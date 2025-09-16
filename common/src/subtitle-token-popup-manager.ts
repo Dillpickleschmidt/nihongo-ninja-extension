@@ -18,7 +18,6 @@ export class SubtitleTokenPopupManager {
         this.container.style.position = 'fixed';
         this.container.style.top = '0';
         this.container.style.left = '0';
-        this.container.style.zIndex = '2147483647';
         this.container.style.pointerEvents = 'none';
         document.body.appendChild(this.container);
 
@@ -31,18 +30,31 @@ export class SubtitleTokenPopupManager {
 
     private handleTokenClick = (event: MouseEvent) => {
         const target = event.target as HTMLElement;
+
         if (target && target.classList.contains('asbplayer-kagome-token')) {
             const tokenData = target.getAttribute('data-token');
             if (tokenData) {
                 try {
                     const token: KagomeToken = JSON.parse(tokenData.replace(/&quot;/g, '"'));
+                    // Skip tokens with part of speech starting with "記号" (symbols)
+                    if (token.pos.startsWith('記号')) {
+                        return;
+                    }
+
+                    // If clicking the same token that's currently active, close the popup
+                    if (this.isOpen && this.activeElement === target) {
+                        this.hidePopup();
+                        return;
+                    }
+
                     this.showPopup(target, token);
                 } catch (error) {
                     console.error('Failed to parse token data:', error);
                 }
             }
-        } else {
-            // Click outside token, close popup
+        } else if (this.isOpen && !target.closest('.MuiPopover-paper')) {
+            // Click outside popup content when open - close it
+            event.preventDefault();
             this.hidePopup();
         }
     };

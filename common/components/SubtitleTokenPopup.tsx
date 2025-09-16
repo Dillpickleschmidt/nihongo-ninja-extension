@@ -25,6 +25,13 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({ open, anchorEl,
                 vertical: 'bottom',
                 horizontal: 'center',
             }}
+            sx={{
+                zIndex: 2147483648,
+                pointerEvents: 'none',
+                '& .MuiPopover-paper': {
+                    pointerEvents: 'auto',
+                },
+            }}
         >
             <Paper
                 sx={{
