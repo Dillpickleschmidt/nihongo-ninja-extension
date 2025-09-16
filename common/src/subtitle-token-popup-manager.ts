@@ -13,6 +13,7 @@ export class SubtitleTokenPopupManager {
     private token: KagomeToken | null = null;
     private hoveredElement: HTMLElement | null = null;
     private shiftPressed: boolean = false;
+    private clearTokenTimeout: number | null = null;
     private settings: SettingsProvider;
 
     initialize() {
@@ -108,6 +109,12 @@ export class SubtitleTokenPopupManager {
     }
 
     private showPopup(anchorEl: HTMLElement, token: KagomeToken) {
+        // Cancel any pending token clear timeout since we're showing new content
+        if (this.clearTokenTimeout) {
+            clearTimeout(this.clearTokenTimeout);
+            this.clearTokenTimeout = null;
+        }
+
         // Remove active class from previous element
         if (this.anchorEl) {
             this.anchorEl.classList.remove('asbplayer-kagome-token-active');
@@ -130,7 +137,14 @@ export class SubtitleTokenPopupManager {
 
         this.isOpen = false;
         this.anchorEl = null;
-        this.token = null;
+
+        // Delay clearing token data to let the close animation complete
+        this.clearTokenTimeout = window.setTimeout(() => {
+            this.token = null;
+            this.render();
+        }, 300);
+
+        // Render immediately to hide the popup, but keep token data for animation
         this.render();
     }
 
@@ -159,6 +173,12 @@ export class SubtitleTokenPopupManager {
         // Clean up active class
         if (this.anchorEl) {
             this.anchorEl.classList.remove('asbplayer-kagome-token-active');
+        }
+
+        // Clean up any pending timeout
+        if (this.clearTokenTimeout) {
+            clearTimeout(this.clearTokenTimeout);
+            this.clearTokenTimeout = null;
         }
 
         document.removeEventListener('click', this.handleTokenClick);
