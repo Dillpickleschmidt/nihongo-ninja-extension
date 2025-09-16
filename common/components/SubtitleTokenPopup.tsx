@@ -2,6 +2,8 @@ import React from 'react';
 import Popover from '@mui/material/Popover';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
+import { ThemeProvider } from '@mui/material/styles';
+import { createTheme } from '../theme';
 import { KagomeToken } from '../src/model';
 
 interface SubtitleTokenPopupProps {
@@ -9,62 +11,72 @@ interface SubtitleTokenPopupProps {
     anchorEl: HTMLElement | null;
     token: KagomeToken | null;
     onClose: () => void;
+    themeType?: string;
 }
 
-const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({ open, anchorEl, token, onClose }) => {
+const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
+    open,
+    anchorEl,
+    token,
+    onClose,
+    themeType = 'dark',
+}) => {
+    const theme = createTheme(themeType as 'dark' | 'light');
+
     return (
-        <Popover
-            open={open}
-            anchorEl={anchorEl}
-            onClose={onClose}
-            anchorOrigin={{
-                vertical: 'top',
-                horizontal: 'center',
-            }}
-            transformOrigin={{
-                vertical: 'bottom',
-                horizontal: 'center',
-            }}
-            sx={{
-                zIndex: 2147483648,
-                pointerEvents: 'none',
-                '& .MuiPopover-paper': {
-                    pointerEvents: 'auto',
-                },
-            }}
-        >
-            <Paper
+        <ThemeProvider theme={theme}>
+            <Popover
+                open={open}
+                anchorEl={anchorEl}
+                onClose={onClose}
+                anchorOrigin={{
+                    vertical: 'top',
+                    horizontal: 'center',
+                }}
+                transformOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'center',
+                }}
                 sx={{
-                    width: 400,
-                    height: 300,
-                    padding: 2,
+                    zIndex: 2147483648,
+                    pointerEvents: 'none',
+                    '& .MuiPopover-paper': {
+                        pointerEvents: 'auto',
+                    },
                 }}
             >
-                {token ? (
-                    <div>
-                        <Typography variant="h6" gutterBottom>
-                            {token.surface_form}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            Reading: {token.reading}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            Base Form: {token.base_form}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            Part of Speech: {token.pos}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            Pronunciation: {token.pronunciation}
-                        </Typography>
-                    </div>
-                ) : (
-                    <Typography>No token data available</Typography>
-                )}
-            </Paper>
-        </Popover>
+                <Paper
+                    sx={{
+                        width: 400,
+                        height: 300,
+                        padding: 2,
+                    }}
+                >
+                    {token ? (
+                        <div>
+                            <Typography variant="h6" gutterBottom>
+                                {token.surface_form}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                Reading: {token.reading}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                Base Form: {token.base_form}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                Part of Speech: {token.pos}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                Pronunciation: {token.pronunciation}
+                            </Typography>
+                        </div>
+                    ) : (
+                        <Typography>No token data available</Typography>
+                    )}
+                </Paper>
+            </Popover>
+        </ThemeProvider>
     );
 };
 
 export default SubtitleTokenPopup;
-

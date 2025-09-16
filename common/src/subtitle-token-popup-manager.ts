@@ -2,6 +2,8 @@ import React from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import { KagomeToken } from './model';
 import SubtitleTokenPopup from '../components/SubtitleTokenPopup';
+import { SettingsProvider } from '../settings';
+import { ExtensionSettingsStorage } from '../../extension/src/services/extension-settings-storage';
 
 export class SubtitleTokenPopupManager {
     private container: HTMLDivElement | null = null;
@@ -10,8 +12,10 @@ export class SubtitleTokenPopupManager {
     private anchorEl: HTMLElement | null = null;
     private token: KagomeToken | null = null;
     private activeElement: HTMLElement | null = null;
+    private settings: SettingsProvider;
 
     initialize() {
+        this.settings = new SettingsProvider(new ExtensionSettingsStorage());
         // Create popup container
         this.container = document.createElement('div');
         this.container.id = 'asbplayer-subtitle-popup-container';
@@ -88,14 +92,22 @@ export class SubtitleTokenPopupManager {
         this.render();
     }
 
-    private render() {
+    private async render() {
         if (this.root) {
+            let themeType = 'dark';
+            try {
+                themeType = await this.settings.getSingle('themeType');
+            } catch (error) {
+                // Keep default 'dark'
+            }
+
             this.root.render(
                 React.createElement(SubtitleTokenPopup, {
                     open: this.isOpen,
                     anchorEl: this.anchorEl,
                     token: this.token,
                     onClose: () => this.hidePopup(),
+                    themeType,
                 })
             );
         }
