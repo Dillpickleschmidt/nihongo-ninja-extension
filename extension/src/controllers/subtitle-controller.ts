@@ -4,6 +4,7 @@ import {
     OffsetFromVideoMessage,
     SubtitleModel,
     VideoToExtensionCommand,
+    KagomeToken,
 } from '@project/common';
 import {
     SettingsProvider,
@@ -22,6 +23,7 @@ import {
     KeyedHtml,
     OffsetAnchor,
 } from '../services/element-overlay';
+import { SubtitleTokenPopupManager } from '@project/common/src/subtitle-token-popup-manager';
 
 const boundingBoxPadding = 25;
 
@@ -60,6 +62,7 @@ export default class SubtitleController {
     private notificationElementOverlay: ElementOverlay;
     private shouldRenderBottomOverlay: boolean;
     private shouldRenderTopOverlay: boolean;
+    private popupManager: SubtitleTokenPopupManager;
     private subtitleTrackAlignments: { [key: number]: SubtitleAlignment | undefined };
     private unblurredSubtitleTracks: { [key: number]: boolean | undefined };
     disabledSubtitleTracks: { [key: number]: boolean | undefined };
@@ -103,6 +106,10 @@ export default class SubtitleController {
         this.bottomSubtitlesElementOverlay = subtitlesElementOverlay;
         this.topSubtitlesElementOverlay = topSubtitlesElementOverlay;
         this.notificationElementOverlay = notificationElementOverlay;
+
+        // Initialize popup manager
+        this.popupManager = new SubtitleTokenPopupManager();
+        this.popupManager.initialize();
     }
 
     get subtitles() {
@@ -483,7 +490,10 @@ export default class SubtitleController {
         if (kagomeTokens && kagomeTokens.length > 0) {
             const tokenHtml = kagomeTokens
                 .filter((token) => token && token.surface_form)
-                .map((token) => `<span class="asbplayer-kagome-token">${token.surface_form}</span>`)
+                .map((token) => {
+                    const tokenData = JSON.stringify(token).replace(/"/g, '&quot;');
+                    return `<span class="asbplayer-kagome-token" data-token="${tokenData}">${token.surface_form}</span>`;
+                })
                 .join('');
             return this._buildTextHtml(tokenHtml, track);
         }
@@ -506,6 +516,7 @@ export default class SubtitleController {
         this.bottomSubtitlesElementOverlay.dispose();
         this.topSubtitlesElementOverlay.dispose();
         this.notificationElementOverlay.dispose();
+        this.popupManager.dispose();
         this.onNextToShow = undefined;
         this.onSlice = undefined;
         this.onOffsetChange = undefined;

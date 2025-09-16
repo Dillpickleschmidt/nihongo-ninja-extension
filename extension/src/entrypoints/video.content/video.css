@@ -211,3 +211,7 @@
     /* transform: scale(1.02) !important; */
     color: #a78bfa !important; /* Tailwind violet-400 */
 }
+
+.asbplayer-kagome-token.asbplayer-kagome-token-active {
+    color: #a78bfa !important; /* Tailwind violet-400 - same as hover */
+}
