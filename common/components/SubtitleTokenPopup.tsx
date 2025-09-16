@@ -29,6 +29,11 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
                 open={open}
                 anchorEl={anchorEl}
                 onClose={onClose}
+                slotProps={{
+                    root: {
+                        'aria-hidden': false,
+                    },
+                }}
                 anchorOrigin={{
                     vertical: 'top',
                     horizontal: 'center',

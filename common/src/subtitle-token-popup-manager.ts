@@ -11,7 +11,8 @@ export class SubtitleTokenPopupManager {
     private isOpen: boolean = false;
     private anchorEl: HTMLElement | null = null;
     private token: KagomeToken | null = null;
-    private activeElement: HTMLElement | null = null;
+    private hoveredElement: HTMLElement | null = null;
+    private shiftPressed: boolean = false;
     private settings: SettingsProvider;
 
     initialize() {
@@ -30,32 +31,19 @@ export class SubtitleTokenPopupManager {
 
         // Set up click event delegation
         document.addEventListener('click', this.handleTokenClick);
+
+        // Set up keyboard and hover tracking
+        document.addEventListener('keydown', this.handleKeyDown);
+        document.addEventListener('keyup', this.handleKeyUp);
+        document.addEventListener('mouseover', this.handleMouseOver);
+        document.addEventListener('mouseout', this.handleMouseOut);
     }
 
     private handleTokenClick = (event: MouseEvent) => {
         const target = event.target as HTMLElement;
 
         if (target && target.classList.contains('asbplayer-kagome-token')) {
-            const tokenData = target.getAttribute('data-token');
-            if (tokenData) {
-                try {
-                    const token: KagomeToken = JSON.parse(tokenData.replace(/&quot;/g, '"'));
-                    // Skip tokens with part of speech starting with "記号" (symbols)
-                    if (token.pos.startsWith('記号')) {
-                        return;
-                    }
-
-                    // If clicking the same token that's currently active, close the popup
-                    if (this.isOpen && this.activeElement === target) {
-                        this.hidePopup();
-                        return;
-                    }
-
-                    this.showPopup(target, token);
-                } catch (error) {
-                    console.error('Failed to parse token data:', error);
-                }
-            }
+            this.tryShowPopup(target);
         } else if (this.isOpen && !target.closest('.MuiPopover-paper')) {
             // Click outside popup content when open - close it
             event.preventDefault();
@@ -63,17 +51,72 @@ export class SubtitleTokenPopupManager {
         }
     };
 
+    private handleKeyDown = (event: KeyboardEvent) => {
+        if (event.key === 'Shift' && !this.shiftPressed) {
+            this.shiftPressed = true;
+
+            if (this.hoveredElement?.classList.contains('asbplayer-kagome-token')) {
+                this.tryShowPopup(this.hoveredElement);
+            } else if (this.isOpen) {
+                this.hidePopup();
+            }
+        }
+    };
+
+    private handleKeyUp = (event: KeyboardEvent) => {
+        if (event.key === 'Shift') {
+            this.shiftPressed = false;
+        }
+    };
+
+    private handleMouseOver = (event: MouseEvent) => {
+        const target = event.target as HTMLElement;
+        if (target?.classList.contains('asbplayer-kagome-token')) {
+            this.hoveredElement = target;
+        }
+    };
+
+    private handleMouseOut = (event: MouseEvent) => {
+        const target = event.target as HTMLElement;
+        if (target?.classList.contains('asbplayer-kagome-token')) {
+            this.hoveredElement = null;
+        }
+    };
+
+    private tryShowPopup(element: HTMLElement) {
+        const tokenData = element.getAttribute('data-token');
+        if (!tokenData) return;
+
+        try {
+            const token: KagomeToken = JSON.parse(tokenData.replace(/&quot;/g, '"'));
+
+            // Skip tokens with part of speech starting with "記号" (symbols)
+            if (token.pos.startsWith('記号')) {
+                return;
+            }
+
+            // If targeting the same token that's currently active, close the popup
+            if (this.isOpen && this.anchorEl === element) {
+                this.hidePopup();
+                return;
+            }
+
+            this.showPopup(element, token);
+        } catch (error) {
+            console.error('Failed to parse token data:', error);
+        }
+    }
+
     private showPopup(anchorEl: HTMLElement, token: KagomeToken) {
         // Remove active class from previous element
-        if (this.activeElement) {
-            this.activeElement.classList.remove('asbplayer-kagome-token-active');
+        if (this.anchorEl) {
+            this.anchorEl.classList.remove('asbplayer-kagome-token-active');
         }
 
         // Set new active element and add active class
-        this.activeElement = anchorEl;
-        this.activeElement.classList.add('asbplayer-kagome-token-active');
-
         this.anchorEl = anchorEl;
+        this.anchorEl.classList.add('asbplayer-kagome-token-active');
+
         this.token = token;
         this.isOpen = true;
         this.render();
@@ -81,9 +124,8 @@ export class SubtitleTokenPopupManager {
 
     private hidePopup() {
         // Remove active class when closing popup
-        if (this.activeElement) {
-            this.activeElement.classList.remove('asbplayer-kagome-token-active');
-            this.activeElement = null;
+        if (this.anchorEl) {
+            this.anchorEl.classList.remove('asbplayer-kagome-token-active');
         }
 
         this.isOpen = false;
@@ -115,12 +157,15 @@ export class SubtitleTokenPopupManager {
 
     dispose() {
         // Clean up active class
-        if (this.activeElement) {
-            this.activeElement.classList.remove('asbplayer-kagome-token-active');
-            this.activeElement = null;
+        if (this.anchorEl) {
+            this.anchorEl.classList.remove('asbplayer-kagome-token-active');
         }
 
         document.removeEventListener('click', this.handleTokenClick);
+        document.removeEventListener('keydown', this.handleKeyDown);
+        document.removeEventListener('keyup', this.handleKeyUp);
+        document.removeEventListener('mouseover', this.handleMouseOver);
+        document.removeEventListener('mouseout', this.handleMouseOut);
         if (this.root) {
             this.root.unmount();
             this.root = null;
