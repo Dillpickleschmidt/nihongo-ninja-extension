@@ -29,6 +29,8 @@ export interface KagomeToken {
     readonly base_form: string;
     readonly reading: string;
     readonly pronunciation: string;
+    readonly jotobaWords?: import('./jotoba-api').JotobaWord[];
+    readonly jotobaNames?: import('./jotoba-api').JotobaName[];
 }
 
 export interface SubtitleModel {
