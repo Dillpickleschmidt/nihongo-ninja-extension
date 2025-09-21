@@ -94,6 +94,9 @@ export default defineConfig({
                     matches: ['<all_urls>'],
                 },
             ],
+            content_security_policy: {
+                extension_pages: "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; img-src blob: 'self'; style-src 'self' 'unsafe-inline'; media-src *; connect-src *",
+            },
         };
 
         let commands: Browser.runtime.Manifest['commands'] = {

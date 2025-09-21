@@ -3584,6 +3584,7 @@ __metadata:
     "@types/semver": ^7.7.0
     "@types/uuid": ^10.0.0
     "@wxt-dev/module-react": ^1.1.3
+    "@zip.js/zip.js": ^2.7.54
     i18next: ^25.3.2
     jest: ^30.0.5
     m3u8-parser: ^7.2.0
@@ -4756,6 +4757,13 @@ __metadata:
   version: 0.8.10
   resolution: "@xmldom/xmldom@npm:0.8.10"
   checksum: 4c136aec31fb3b49aaa53b6fcbfe524d02a1dc0d8e17ee35bd3bf35e9ce1344560481cd1efd086ad1a4821541482528672306d5e37cdbd187f33d7fadd3e2cf0
+  languageName: node
+  linkType: hard
+
+"@zip.js/zip.js@npm:^2.7.54":
+  version: 2.8.2
+  resolution: "@zip.js/zip.js@npm:2.8.2"
+  checksum: bc4b7a48e9bb96facec9553994d489e11e4cab141bb706211bbaf4d16ff365d17341919e1bfb148facbf8f91a2a197d1bc7e2b274a5687a0efabc7dbf5cc47b4
   languageName: node
   linkType: hard
 
