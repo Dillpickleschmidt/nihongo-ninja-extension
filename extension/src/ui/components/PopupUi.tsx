@@ -17,6 +17,7 @@ import { useRequestingActiveTabPermission } from '../hooks/use-requesting-active
 import { isMobile } from 'react-device-detect';
 import { useSettingsProfileContext } from '@project/common/hooks/use-settings-profile-context';
 import { StyledEngineProvider } from '@mui/material/styles';
+import { YomitanDictionaryService } from '../../services/yomitan-dictionary-service';
 
 interface Props {
     commands: any;
@@ -63,6 +64,26 @@ export function PopupUi({ commands }: Props) {
     const handleOpenSidePanel = useCallback(async () => {
         // @ts-ignore
         browser.sidePanel.open({ windowId: (await browser.windows.getLastFocused()).id });
+    }, []);
+
+    const handleImportDictionary = useCallback(async () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.zip';
+        input.onchange = async (event) => {
+            const file = (event.target as HTMLInputElement).files?.[0];
+            if (!file || !file.name.endsWith('.zip')) return;
+
+            try {
+                const service = new YomitanDictionaryService();
+                await service.init();
+                await service.importDictionary(file);
+                console.log(`Successfully imported dictionary: ${file.name}`);
+            } catch (error) {
+                console.error('Failed to import dictionary:', error);
+            }
+        };
+        input.click();
     }, []);
 
     const { requestingActiveTabPermission, tabRequestingActiveTabPermission } = useRequestingActiveTabPermission();
@@ -116,6 +137,7 @@ export function PopupUi({ commands }: Props) {
                             onOpenApp={handleOpenApp}
                             onOpenSidePanel={handleOpenSidePanel}
                             onOpenExtensionShortcuts={handleOpenExtensionShortcuts}
+                            onImportDictionary={handleImportDictionary}
                             {...profilesContext}
                         />
                     </Box>
