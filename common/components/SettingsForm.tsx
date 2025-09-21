@@ -773,7 +773,8 @@ type TabName =
     | 'subtitle-appearance'
     | 'keyboard-shortcuts'
     | 'streaming-video'
-    | 'misc-settings';
+    | 'misc-settings'
+    | 'dictionary-settings';
 
 interface Props {
     anki: Anki;
@@ -1340,7 +1341,7 @@ export default function SettingsForm({
 
     const tabIndicesById = useMemo(() => {
         const tabs = [
-            'anki-settings',
+            'dictionary-settings',
             'mining-settings',
             'subtitle-appearance',
             'keyboard-shortcuts',
@@ -1386,6 +1387,27 @@ export default function SettingsForm({
     }, [onSettingsChanged]);
     const handleImportSettings = useCallback(() => {
         settingsFileInputRef.current?.click();
+    }, []);
+
+    const handleImportDictionary = useCallback(async () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.zip';
+        input.onchange = async (event) => {
+            const file = (event.target as HTMLInputElement).files?.[0];
+            if (!file || !file.name.endsWith('.zip')) return;
+
+            try {
+                const { YomitanDictionaryService } = await import('../../extension/src/services/yomitan-dictionary-service');
+                const service = new YomitanDictionaryService();
+                await service.init();
+                await service.importDictionary(file);
+                console.log(`Successfully imported dictionary: ${file.name}`);
+            } catch (error) {
+                console.error('Failed to import dictionary:', error);
+            }
+        };
+        input.click();
     }, []);
     const handleExportSettings = useCallback(() => {
         const now = new Date();
@@ -1555,7 +1577,8 @@ export default function SettingsForm({
                     marginRight: smallScreen ? 'auto' : 8,
                 }}
             >
-                <Tab tabIndex={0} label={t('settings.anki')} id="anki-settings" />
+                {/* <Tab tabIndex={0} label={t('settings.anki')} id="anki-settings" /> */}
+                <Tab tabIndex={0} label={t('settings.dictionary')} id="dictionary-settings" />
                 <Tab tabIndex={1} label={t('settings.mining')} id="mining-settings" />
                 <Tab tabIndex={2} label={t('settings.subtitleAppearance')} id="subtitle-appearance" />
                 <Tab tabIndex={3} label={t('settings.keyboardShortcuts')} id="keyboard-shortcuts" />
@@ -1565,7 +1588,34 @@ export default function SettingsForm({
                 <Tab tabIndex={5} label={t('settings.misc')} id="misc-settings" />
                 <Tab tabIndex={6} label={t('about.title')} id="about" />
             </Tabs>
+            {/* <TabPanel
+                ref={ankiPanelRef}
+                value={tabIndex}
+                index={tabIndicesById['anki-settings']}
+                tabsOrientation={tabsOrientation}
+            > */}
             <TabPanel
+                value={tabIndex}
+                index={tabIndicesById['dictionary-settings']}
+                tabsOrientation={tabsOrientation}
+            >
+                <FormGroup className={classes.formGroup}>
+                    <Typography variant="h6" gutterBottom>
+                        {t('settings.dictionary')}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary" style={{ marginBottom: 16 }}>
+                        Import Yomitan-compatible dictionary files for Japanese language support.
+                    </Typography>
+                    <Button
+                        variant="contained"
+                        onClick={handleImportDictionary}
+                        style={{ marginBottom: 8 }}
+                    >
+                        {t('settings.importDictionary')}
+                    </Button>
+                </FormGroup>
+            </TabPanel>
+            {/* <TabPanel
                 ref={ankiPanelRef}
                 value={tabIndex}
                 index={tabIndicesById['anki-settings']}
@@ -1829,7 +1879,7 @@ export default function SettingsForm({
                         </TutorialBubble>
                     )}
                 </FormGroup>
-            </TabPanel>
+            </TabPanel> */}
             <TabPanel value={tabIndex} index={tabIndicesById['mining-settings']} tabsOrientation={tabsOrientation}>
                 <FormLabel component="legend">{t('settings.clickToMineDefaultAction')}</FormLabel>
                 <RadioGroup row={false}>

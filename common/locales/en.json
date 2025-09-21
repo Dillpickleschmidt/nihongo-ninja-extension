@@ -326,6 +326,8 @@
         "customCssField": "CSS: {{styleKey}}",
         "deck": "Deck",
         "definitionField": "Definition Field",
+        "dictionary": "Dictionary",
+        "importDictionary": "Import Dictionary",
         "extensionOverriddenBind": "Overridden",
         "extensionShortcut": "Extension shortcut",
         "imageBasedSubtitleScaleFactor": "Image-based Subtitle Scale Factor",

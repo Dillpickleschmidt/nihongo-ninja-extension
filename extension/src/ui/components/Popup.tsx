@@ -4,7 +4,6 @@ import { AsbplayerSettings, Profile, chromeCommandBindsToKeyBinds } from '@proje
 import SettingsForm from '@project/common/components/SettingsForm';
 import PanelIcon from '@project/common/components/PanelIcon';
 import LaunchIcon from '@mui/icons-material/Launch';
-import FileUploadIcon from '@mui/icons-material/FileUpload';
 import { useCallback, useMemo } from 'react';
 import Button from '@mui/material/Button';
 import { useTranslation } from 'react-i18next';
@@ -25,7 +24,6 @@ interface Props {
     onOpenApp: () => void;
     onOpenSidePanel: () => void;
     onOpenExtensionShortcuts: () => void;
-    onImportDictionary: () => void;
     profiles: Profile[];
     activeProfile?: string;
     onNewProfile: (name: string) => void;
@@ -55,7 +53,6 @@ const Popup = ({
     onOpenSidePanel,
     onSettingsChanged,
     onOpenExtensionShortcuts,
-    onImportDictionary,
     ...profilesContext
 }: Props) => {
     const { t } = useTranslation();
@@ -107,20 +104,6 @@ const Popup = ({
                     </Button>
                 </Grid>
             )}
-            <Grid
-                item
-                style={{ marginLeft: theme.spacing(2), marginTop: theme.spacing(1), marginRight: theme.spacing(2) }}
-            >
-                <Button
-                    variant="contained"
-                    color="secondary"
-                    startIcon={<FileUploadIcon />}
-                    onClick={onImportDictionary}
-                    style={{ width: '100%' }}
-                >
-                    Import Dictionary
-                </Button>
-            </Grid>
             <Grid
                 item
                 style={{
