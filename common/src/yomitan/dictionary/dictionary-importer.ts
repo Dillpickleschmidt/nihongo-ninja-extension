@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-// import * as ajvSchemas0 from '../lib/validate-schemas';
+import * as ajvSchemas0 from '../lib/validate-schemas';
 import {
     BlobWriter as BlobWriter0,
     TextWriter as TextWriter0,
@@ -31,7 +31,7 @@ import {stringReverse} from '../core/utilities';
 import {getFileExtensionFromImageMediaType, getImageMediaTypeFromFileName} from '../media/media-util';
 import {compareRevisions} from './dictionary-data-util';
 
-// const ajvSchemas = /** @type {import('dictionary-importer').CompiledSchemaValidators} */ (/** @type {unknown} */ (ajvSchemas0));
+const ajvSchemas = ajvSchemas0 as any;
 const BlobWriter = /** @type {typeof import('@zip.js/zip.js').BlobWriter} */ (/** @type {unknown} */ (BlobWriter0));
 const TextWriter = /** @type {typeof import('@zip.js/zip.js').TextWriter} */ (/** @type {unknown} */ (TextWriter0));
 const Uint8ArrayReader = /** @type {typeof import('@zip.js/zip.js').Uint8ArrayReader} */ (/** @type {unknown} */ (Uint8ArrayReader0));
@@ -966,11 +966,10 @@ export class DictionaryImporter {
             }
         }
 
-        // Temporarily disable schema validation
-        // const schema = ajvSchemas[schemaName];
-        // if (!schema(entries)) {
-        //     throw this._formatAjvSchemaError(schema, file.filename);
-        // }
+        const schema = ajvSchemas[schemaName];
+        if (!schema(entries)) {
+            throw this._formatAjvSchemaError(schema, file.filename);
+        }
 
         ++this._progressData.index;
         this._progress();
