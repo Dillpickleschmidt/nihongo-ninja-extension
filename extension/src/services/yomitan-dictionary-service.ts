@@ -47,7 +47,6 @@ export class YomitanDictionaryService {
             this.importer = new DictionaryImporter(mediaLoader);
 
             this.initialized = true;
-            console.log('Yomitan dictionary service initialized');
         } catch (error) {
             console.error('Failed to initialize Yomitan dictionary service:', error);
             throw error;
@@ -70,7 +69,7 @@ export class YomitanDictionaryService {
 
             // Use DictionaryImporter.importDictionary method
             const importDetails = {
-                prefixWildcardsSupported: true
+                prefixWildcardsSupported: true,
             };
 
             const result = await this.importer.importDictionary(this.db, arrayBuffer, importDetails);
@@ -93,7 +92,7 @@ export class YomitanDictionaryService {
         try {
             // Get all enabled dictionaries
             const dictionaries = await this.getDictionaries();
-            const enabledDictionaries = new Set(dictionaries.map(dict => dict.title));
+            const enabledDictionaries = new Set(dictionaries.map((dict) => dict.title));
 
             // Perform bulk lookup
             const results = await this.db.findTermsBulk(expressions, enabledDictionaries);
@@ -130,12 +129,12 @@ export class YomitanDictionaryService {
 
         try {
             const dictionaries = await this.db.getDictionaryInfo();
-            return dictionaries.map(dict => ({
+            return dictionaries.map((dict) => ({
                 title: dict.title,
                 version: dict.version,
                 author: dict.author,
                 url: dict.url,
-                description: dict.description
+                description: dict.description,
             }));
         } catch (error) {
             console.error('Failed to get dictionaries:', error);
@@ -176,3 +175,4 @@ export class YomitanDictionaryService {
         }
     }
 }
+

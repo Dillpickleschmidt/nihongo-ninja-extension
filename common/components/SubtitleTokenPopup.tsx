@@ -1,14 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import Popover from '@mui/material/Popover';
 import Paper from '@mui/material/Paper';
-import VolumeUpRounded from '@mui/icons-material/VolumeUpRounded';
-import VolumeDownRounded from '@mui/icons-material/VolumeDownRounded';
 import ChevronLeftRounded from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRounded from '@mui/icons-material/ChevronRightRounded';
 import { ThemeProvider } from '@mui/material/styles';
 import { createTheme } from '../theme';
 import { KagomeToken } from '../src/model';
-import { JotobaApiService, JotobaWord, JotobaName } from '../src/jotoba-api';
+
+export interface YomitanTermEntry {
+    expression: string;
+    reading: string;
+    definitionTags: string;
+    rules: string;
+    score: number;
+    glossary: (string | any)[];
+    sequence: number;
+    termTags: string;
+    dictionary: string;
+}
 
 interface SubtitleTokenPopupProps {
     open: boolean;
@@ -16,6 +25,7 @@ interface SubtitleTokenPopupProps {
     token: KagomeToken | null;
     onClose: () => void;
     themeType?: string;
+    onLookupYomitan?: (term: string) => Promise<YomitanTermEntry[]>;
 }
 
 const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
@@ -24,138 +34,200 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
     token,
     onClose,
     themeType = 'dark',
+    onLookupYomitan,
 }) => {
     const theme = createTheme(themeType as 'dark' | 'light');
-    const [jotobaData, setJotobaData] = useState<{ words?: JotobaWord[]; names?: JotobaName[] } | null>(null);
+    const [yomitanData, setYomitanData] = useState<YomitanTermEntry[] | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [currentWordIndex, setCurrentWordIndex] = useState(0);
+    const [currentDictionaryIndex, setCurrentDictionaryIndex] = useState(0);
+
+    // Simple recursive renderer for Yomitan's structured content
+    const renderStructuredContent = (content: any): React.ReactNode => {
+        if (!content) return null;
+
+        // Handle string
+        if (typeof content === 'string') {
+            return content;
+        }
+
+        // Handle array
+        if (Array.isArray(content)) {
+            return content.map((item, index) => (
+                <React.Fragment key={index}>{renderStructuredContent(item)}</React.Fragment>
+            ));
+        }
+
+        // Handle structured content object
+        if (typeof content === 'object') {
+            // If it has a type and content property (structured content wrapper)
+            if (content.type === 'structured-content' && content.content) {
+                return renderStructuredContent(content.content);
+            }
+
+            // If it has a tag property (DOM element)
+            if (content.tag) {
+                const { tag, content: innerContent, title } = content;
+
+                // For simplicity, just render the content with basic elements
+                switch (tag) {
+                    case 'br':
+                        return <br />;
+                    case 'div':
+                        return <div>{renderStructuredContent(innerContent)}</div>;
+                    case 'span':
+                        return <span title={title}>{renderStructuredContent(innerContent)}</span>;
+                    case 'table':
+                        // Check if innerContent is an array and first item is a tr
+                        // If so, wrap in tbody for proper HTML structure
+                        if (Array.isArray(innerContent) && innerContent.length > 0 && innerContent[0]?.tag === 'tr') {
+                            return (
+                                <table>
+                                    <tbody>{renderStructuredContent(innerContent)}</tbody>
+                                </table>
+                            );
+                        }
+                        return <table>{renderStructuredContent(innerContent)}</table>;
+                    case 'tbody':
+                        return <tbody>{renderStructuredContent(innerContent)}</tbody>;
+                    case 'thead':
+                        return <thead>{renderStructuredContent(innerContent)}</thead>;
+                    case 'tfoot':
+                        return <tfoot>{renderStructuredContent(innerContent)}</tfoot>;
+                    case 'tr':
+                        return <tr>{renderStructuredContent(innerContent)}</tr>;
+                    case 'td':
+                        return <td>{renderStructuredContent(innerContent)}</td>;
+                    case 'th':
+                        return <th>{renderStructuredContent(innerContent)}</th>;
+                    case 'ul':
+                        return <ul>{renderStructuredContent(innerContent)}</ul>;
+                    case 'li':
+                        return <li>{renderStructuredContent(innerContent)}</li>;
+                    default:
+                        // For unknown tags, just render the content
+                        return renderStructuredContent(innerContent);
+                }
+            }
+
+            // If it's just an object, try to render its content property
+            if (content.content) {
+                return renderStructuredContent(content.content);
+            }
+        }
+
+        return null;
+    };
 
     useEffect(() => {
         if (token) {
             setIsLoading(true);
-            setJotobaData(null);
-            setCurrentWordIndex(0);
+            setYomitanData(null);
+            setCurrentDictionaryIndex(0);
 
-            JotobaApiService.searchBasedOnToken(token.surface_form, token.pos)
-                .then((data) => {
-                    setJotobaData(data);
-                })
-                .catch((error) => {
-                    console.error('Failed to fetch Jotoba data:', error);
-                    setJotobaData(null);
-                })
-                .finally(() => {
-                    setIsLoading(false);
-                });
+            // Yomitan lookup
+            if (onLookupYomitan) {
+                onLookupYomitan(token.surface_form)
+                    .then((yomitanResult) => {
+                        setYomitanData(yomitanResult);
+                    })
+                    .catch((error) => {
+                        console.error('Yomitan lookup failed:', error);
+                        setYomitanData([]);
+                    })
+                    .finally(() => {
+                        setIsLoading(false);
+                    });
+            } else {
+                setIsLoading(false);
+                setYomitanData([]);
+            }
         }
-    }, [token]);
+    }, [token, onLookupYomitan]);
 
-    const playAudio = (audioPath: string) => {
-        if (audioPath) {
-            setIsPlaying(true);
-            const audio = new Audio(`https://jotoba.de${audioPath}`);
-            audio.addEventListener('ended', () => setIsPlaying(false));
-            audio.play().catch((error) => {
-                console.error('Failed to play audio:', error);
-                setIsPlaying(false);
-            });
-        }
-    };
+    const renderYomitanEntries = (entries: YomitanTermEntry[]) => {
+        if (!entries.length) return null;
 
-    const renderJotobaWords = (words: JotobaWord[]) => {
-        if (!words.length) return null;
-
-        const currentWord = words[currentWordIndex] || words[0];
-        const allMeanings = currentWord.senses.flatMap(sense => sense.glosses);
+        const currentEntry = entries[currentDictionaryIndex] || entries[0];
+        const meanings = Array.isArray(currentEntry.glossary) ? currentEntry.glossary : [currentEntry.glossary];
 
         return (
             <>
                 <div style={{ marginTop: '12px', fontSize: '1.1rem' }}>
+                    <div style={{ marginBottom: '8px', fontSize: '0.9rem', color: '#007acc', fontWeight: 'bold' }}>
+                        📚 {currentEntry.dictionary}
+                    </div>
                     <div>
-                        {allMeanings.slice(0, 3).map((meaning, meaningIndex) => (
+                        {meanings.map((meaning, meaningIndex) => (
                             <div key={meaningIndex} style={{ marginBottom: '4px' }}>
-                                • {meaning}
+                                • {renderStructuredContent(meaning)}
                             </div>
                         ))}
                     </div>
 
-                    {currentWord.pitch && currentWord.pitch.length > 0 && (
-                        <div style={{ marginTop: '8px', fontSize: '1rem', color: '#666' }}>
-                            Pitch: {currentWord.pitch.map((p) => p.part).join('')}
+                    {currentEntry.termTags && currentEntry.termTags.length > 0 && (
+                        <div style={{ marginTop: '8px', fontSize: '0.9rem', color: '#666' }}>
+                            Tags: {currentEntry.termTags}
                         </div>
                     )}
                 </div>
 
-                {words.length > 1 && (
-                    <div style={{
-                        position: 'absolute',
-                        bottom: '8px',
-                        right: '8px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                    }}>
+                {entries.length > 1 && (
+                    <div
+                        style={{
+                            position: 'absolute',
+                            bottom: '8px',
+                            right: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                        }}
+                    >
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
-                                setCurrentWordIndex(Math.max(0, currentWordIndex - 1));
+                                setCurrentDictionaryIndex(Math.max(0, currentDictionaryIndex - 1));
                             }}
-                            disabled={currentWordIndex === 0}
+                            disabled={currentDictionaryIndex === 0}
                             style={{
                                 border: 'none',
                                 background: 'transparent',
-                                cursor: currentWordIndex === 0 ? 'default' : 'pointer',
-                                opacity: currentWordIndex === 0 ? 0.3 : 1,
+                                cursor: currentDictionaryIndex === 0 ? 'default' : 'pointer',
+                                opacity: currentDictionaryIndex === 0 ? 0.3 : 1,
                                 padding: 0,
                                 display: 'flex',
                                 alignItems: 'center',
-                                color: 'inherit'
+                                color: 'inherit',
                             }}
-                            title="Previous definition"
+                            title="Previous entry"
                         >
                             <ChevronLeftRounded sx={{ fontSize: '1.5rem' }} />
                         </button>
                         <span style={{ fontSize: '0.9rem', color: '#666' }}>
-                            {currentWordIndex + 1}/{words.length}
+                            {currentDictionaryIndex + 1}/{entries.length}
                         </span>
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
-                                setCurrentWordIndex(Math.min(words.length - 1, currentWordIndex + 1));
+                                setCurrentDictionaryIndex(Math.min(entries.length - 1, currentDictionaryIndex + 1));
                             }}
-                            disabled={currentWordIndex >= words.length - 1}
+                            disabled={currentDictionaryIndex >= entries.length - 1}
                             style={{
                                 border: 'none',
                                 background: 'transparent',
-                                cursor: currentWordIndex >= words.length - 1 ? 'default' : 'pointer',
-                                opacity: currentWordIndex >= words.length - 1 ? 0.3 : 1,
+                                cursor: currentDictionaryIndex >= entries.length - 1 ? 'default' : 'pointer',
+                                opacity: currentDictionaryIndex >= entries.length - 1 ? 0.3 : 1,
                                 padding: 0,
                                 display: 'flex',
                                 alignItems: 'center',
-                                color: 'inherit'
+                                color: 'inherit',
                             }}
-                            title="Next definition"
+                            title="Next entry"
                         >
                             <ChevronRightRounded sx={{ fontSize: '1.5rem' }} />
                         </button>
                     </div>
                 )}
             </>
-        );
-    };
-
-    const renderJotobaNames = (names: JotobaName[]) => {
-        if (!names.length) return null;
-
-        const firstName = names[0];
-        return (
-            <div style={{ marginTop: '12px', fontSize: '1.1rem' }}>
-                {firstName.transcription && (
-                    <div>Transcription: {firstName.transcription}</div>
-                )}
-                <div style={{ color: '#666' }}>Type: {firstName.name_type.join(', ')}</div>
-            </div>
         );
     };
 
@@ -195,60 +267,61 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
                     }}
                 >
                     {token ? (
-                        <div style={{ fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif', position: 'relative', height: '100%' }}>
+                        <div
+                            style={{
+                                fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                                position: 'relative',
+                                height: '100%',
+                            }}
+                        >
                             <h2 style={{ display: 'inline', fontSize: '1.75rem', margin: 0 }}>
-                                {currentWordIndex === 0
-                                    ? token.surface_form
-                                    : (jotobaData?.words && jotobaData.words[currentWordIndex]
-                                        ? (jotobaData.words[currentWordIndex].reading.kanji || jotobaData.words[currentWordIndex].reading.kana)
-                                        : token.surface_form)}
+                                {yomitanData && yomitanData.length > 0 && currentDictionaryIndex < yomitanData.length
+                                    ? yomitanData[currentDictionaryIndex].expression
+                                    : token.surface_form}
                             </h2>
                             <span style={{ color: '#666', marginLeft: '8px', fontSize: '1.25rem' }}>
-                                ({currentWordIndex === 0
-                                    ? token.pronunciation
-                                    : (jotobaData?.words && jotobaData.words[currentWordIndex]
-                                        ? jotobaData.words[currentWordIndex].reading.kana
-                                        : token.pronunciation)})
+                                (
+                                {yomitanData && yomitanData.length > 0 && currentDictionaryIndex < yomitanData.length
+                                    ? yomitanData[currentDictionaryIndex].reading
+                                    : token.pronunciation}
+                                )
                             </span>
-                            <div style={{ fontSize: '1rem', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <div style={{ width: '16px', display: 'flex', alignItems: 'center' }}>
-                                    {jotobaData?.words && jotobaData.words[currentWordIndex]?.audio && (
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                playAudio(jotobaData.words[currentWordIndex].audio);
-                                            }}
-                                            style={{
-                                                border: 'none',
-                                                background: 'transparent',
-                                                cursor: 'pointer',
-                                                padding: 0,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                color: 'inherit'
-                                            }}
-                                            title="Play audio"
-                                        >
-                                            {isPlaying ? (
-                                                <VolumeUpRounded sx={{ fontSize: '1.2rem' }} />
-                                            ) : (
-                                                <VolumeDownRounded sx={{ fontSize: '1.2rem' }} />
-                                            )}
-                                        </button>
-                                    )}
-                                </div>
-                                {currentWordIndex === 0 && <span>{token.pos.split(',').filter(p => p !== '*').join(', ')}</span>}
+                            <div
+                                style={{
+                                    fontSize: '1rem',
+                                    marginTop: '4px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                }}
+                            >
+                                <span>
+                                    {token.pos
+                                        .split(',')
+                                        .filter((p) => p !== '*')
+                                        .join(', ')}
+                                </span>
                             </div>
 
                             {isLoading && (
                                 <div style={{ textAlign: 'center', marginTop: '16px', fontSize: '1rem' }}>
-                                    Loading...
+                                    Loading dictionary...
                                 </div>
                             )}
 
-                            {jotobaData?.words && renderJotobaWords(jotobaData.words)}
-                            {jotobaData?.names && renderJotobaNames(jotobaData.names)}
+                            {yomitanData && yomitanData.length > 0 ? (
+                                renderYomitanEntries(yomitanData)
+                            ) : !isLoading ? (
+                                <div
+                                    style={{ marginTop: '16px', textAlign: 'center', color: '#666', fontSize: '1rem' }}
+                                >
+                                    No dictionary entries found.
+                                    <br />
+                                    <span style={{ fontSize: '0.9rem' }}>
+                                        Import dictionaries in Settings → Dictionary tab
+                                    </span>
+                                </div>
+                            ) : null}
                         </div>
                     ) : (
                         <div>No token data available</div>

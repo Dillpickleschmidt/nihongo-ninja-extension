@@ -1,7 +1,7 @@
 import React from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import { KagomeToken } from './model';
-import SubtitleTokenPopup from '../components/SubtitleTokenPopup';
+import SubtitleTokenPopup, { YomitanTermEntry } from '../components/SubtitleTokenPopup';
 import { SettingsProvider } from '../settings';
 import { ExtensionSettingsStorage } from '../../extension/src/services/extension-settings-storage';
 
@@ -18,6 +18,7 @@ export class SubtitleTokenPopupManager {
 
     initialize() {
         this.settings = new SettingsProvider(new ExtensionSettingsStorage());
+
         // Create popup container
         this.container = document.createElement('div');
         this.container.id = 'asbplayer-subtitle-popup-container';
@@ -148,6 +149,30 @@ export class SubtitleTokenPopupManager {
         this.render();
     }
 
+    private lookupYomitanTerm = async (searchText: string): Promise<YomitanTermEntry[]> => {
+        try {
+            // Send message to background script to perform lookup - matching Kagome format
+            const message = {
+                sender: 'asbplayer-video',
+                message: {
+                    command: 'dictionary-lookup',
+                    term: searchText,
+                },
+                src: window.location.href, // Add src like Kagome messages
+            };
+            const response = await browser.runtime.sendMessage(message);
+
+            if (response && response.success && response.entries) {
+                return response.entries;
+            }
+
+            return [];
+        } catch (error) {
+            console.error('Dictionary lookup failed:', error);
+            return [];
+        }
+    };
+
     private async render() {
         if (this.root) {
             let themeType = 'dark';
@@ -164,6 +189,7 @@ export class SubtitleTokenPopupManager {
                     token: this.token,
                     onClose: () => this.hidePopup(),
                     themeType,
+                    onLookupYomitan: this.lookupYomitanTerm,
                 })
             );
         }
