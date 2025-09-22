@@ -28,6 +28,10 @@ export interface TermEntry {
     termTags: string[];
 }
 
+export interface TermDictionaryEntry extends TermEntry {
+    styles?: string; // Dictionary-specific CSS styles
+}
+
 export class YomitanDictionaryService {
     private db = new DictionaryDatabase();
     private importer: DictionaryImporter;
@@ -139,6 +143,32 @@ export class YomitanDictionaryService {
             }));
         } catch (error) {
             console.error('Failed to get dictionaries:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get dictionary styles map (following Yomitan's getDictionaryStylesMap pattern)
+     */
+    async getDictionaryStylesMap(): Promise<Map<string, string>> {
+        if (!this.initialized) {
+            throw new Error('Dictionary service not initialized. Call init() first.');
+        }
+
+        try {
+            const dictionaries = await this.db.getDictionaryInfo();
+            const styleMap = new Map<string, string>();
+
+            for (const dictionary of dictionaries) {
+                const { title, styles } = dictionary;
+                if (typeof styles === 'string' && styles.trim()) {
+                    styleMap.set(title, styles);
+                }
+            }
+
+            return styleMap;
+        } catch (error) {
+            console.error('Failed to get dictionary styles map:', error);
             throw error;
         }
     }

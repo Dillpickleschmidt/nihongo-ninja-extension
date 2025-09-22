@@ -1,14 +1,11 @@
 /* Simplified Yomitan-style CSS for dictionary popup */
 
-/* Core variables */
+/* Core variables - Additional popup-specific variables only */
+/* Base variables are defined in yomitan-structured-content.css */
 :root {
-    --font-size-no-units: 14;
-    --font-size: calc(1px * var(--font-size-no-units));
     --headword-font-size-no-units: 2;
     --headword-font-size: calc(1em * var(--headword-font-size-no-units));
     --headword-reading-font-size: calc(0.75 * var(--headword-font-size));
-    --line-height-no-units: 20;
-    --line-height: calc(var(--line-height-no-units) / var(--font-size-no-units));
     --entry-vertical-padding: 0.5em;
     --entry-horizontal-padding: 0.72em;
     --list-padding: 1.4em;
@@ -133,23 +130,5 @@
     font-style: italic;
 }
 
-/* Structured content spacing */
-.structured-content div {
-    margin: 0.36em 0;
-}
-
-.structured-content div:first-child {
-    margin-top: 0;
-}
-
-.structured-content div:last-child {
-    margin-bottom: 0;
-}
-
-/* Example sentences with lang="ja" */
-.structured-content div[lang="ja"] {
-    margin: 0.72em 0;
-    padding-left: 1em;
-    border-left: 2px solid #ddd;
-    font-style: italic;
-}
+/* Note: Structured content styling is handled by yomitan-structured-content.css
+   and dictionary-specific CSS. Removed conflicting styles. */

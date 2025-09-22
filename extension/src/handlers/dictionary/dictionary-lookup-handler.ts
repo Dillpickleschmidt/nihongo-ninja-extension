@@ -27,30 +27,11 @@ export default class DictionaryLookupHandler implements CommandHandler {
     }
 
     handle(request: Command<DictionaryLookupMessage>, sender: any, sendResponse: (response: any) => void): boolean {
-        this.performLookup(request.message.term)
+        this.performLookupWithStyles(request.message.term)
             .then((entries) => {
-                const mappedEntries = entries.map((entry) => {
-                    // Yomitan returns 'term' from database 'expression' field
-                    // and 'definitions' from database 'glossary' field
-                    return {
-                        expression: entry.term || entry.expression || '',
-                        reading: entry.reading || '',
-                        definitionTags: Array.isArray(entry.definitionTags)
-                            ? entry.definitionTags.join(' ')
-                            : String(entry.definitionTags || ''),
-                        rules: Array.isArray(entry.rules) ? entry.rules.join(' ') : String(entry.rules || ''),
-                        score: entry.score || 0,
-                        glossary: entry.definitions || entry.glossary || [],
-                        sequence: entry.sequence || 0,
-                        termTags: Array.isArray(entry.termTags)
-                            ? entry.termTags.join(' ')
-                            : String(entry.termTags || ''),
-                        dictionary: entry.dictionary || '',
-                    };
-                });
                 sendResponse({
                     success: true,
-                    entries: mappedEntries,
+                    entries: entries,
                 });
             })
             .catch((error) => {
@@ -64,11 +45,45 @@ export default class DictionaryLookupHandler implements CommandHandler {
         return true; // Indicates we will call sendResponse asynchronously
     }
 
-    private async performLookup(term: string): Promise<any[]> {
+
+    private async performLookupWithStyles(term: string): Promise<any[]> {
         try {
             const service = await this.getDictionaryService();
-            const results = await service.lookupTerms([term]);
-            return results.get(term) || [];
+
+            // Get both lookup results and dictionary styles
+            const [results, stylesMap] = await Promise.all([
+                service.lookupTerms([term]),
+                service.getDictionaryStylesMap()
+            ]);
+
+            const entries = results.get(term) || [];
+
+            // Map entries and include dictionary styles
+            const mappedEntries = entries.map((entry) => {
+                const dictionaryName = entry.dictionary || '';
+                const styles = stylesMap.get(dictionaryName) || '';
+
+                // Yomitan returns 'term' from database 'expression' field
+                // and 'definitions' from database 'glossary' field
+                return {
+                    expression: entry.term || entry.expression || '',
+                    reading: entry.reading || '',
+                    definitionTags: Array.isArray(entry.definitionTags)
+                        ? entry.definitionTags.join(' ')
+                        : String(entry.definitionTags || ''),
+                    rules: Array.isArray(entry.rules) ? entry.rules.join(' ') : String(entry.rules || ''),
+                    score: entry.score || 0,
+                    glossary: entry.definitions || entry.glossary || [],
+                    sequence: entry.sequence || 0,
+                    termTags: Array.isArray(entry.termTags)
+                        ? entry.termTags.join(' ')
+                        : String(entry.termTags || ''),
+                    dictionary: dictionaryName,
+                    styles: styles, // Include dictionary CSS
+                };
+            });
+
+            return mappedEntries;
         } catch (error) {
             console.error('Dictionary service lookup failed:', error);
             return [];
