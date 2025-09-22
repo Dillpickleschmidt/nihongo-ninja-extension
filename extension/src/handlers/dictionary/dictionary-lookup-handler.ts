@@ -29,11 +29,28 @@ export default class DictionaryLookupHandler implements CommandHandler {
     handle(request: Command<DictionaryLookupMessage>, sender: any, sendResponse: (response: any) => void): boolean {
         this.performLookup(request.message.term)
             .then((entries) => {
-                // Pass through the new TermDictionaryEntry format directly
-                // No conversion needed since YomitanDictionaryService now returns the correct format
+                const mappedEntries = entries.map((entry) => {
+                    // Yomitan returns 'term' from database 'expression' field
+                    // and 'definitions' from database 'glossary' field
+                    return {
+                        expression: entry.term || entry.expression || '',
+                        reading: entry.reading || '',
+                        definitionTags: Array.isArray(entry.definitionTags)
+                            ? entry.definitionTags.join(' ')
+                            : String(entry.definitionTags || ''),
+                        rules: Array.isArray(entry.rules) ? entry.rules.join(' ') : String(entry.rules || ''),
+                        score: entry.score || 0,
+                        glossary: entry.definitions || entry.glossary || [],
+                        sequence: entry.sequence || 0,
+                        termTags: Array.isArray(entry.termTags)
+                            ? entry.termTags.join(' ')
+                            : String(entry.termTags || ''),
+                        dictionary: entry.dictionary || '',
+                    };
+                });
                 sendResponse({
                     success: true,
-                    entries: entries,
+                    entries: mappedEntries,
                 });
             })
             .catch((error) => {

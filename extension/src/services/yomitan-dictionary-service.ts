@@ -6,7 +6,6 @@
 import { DictionaryDatabase } from '../../../common/src/yomitan/dictionary/dictionary-database';
 import { DictionaryImporter } from '../../../common/src/yomitan/dictionary/dictionary-importer';
 import { DictionaryImporterMediaLoader } from '../../../common/src/yomitan/dictionary/dictionary-importer-media-loader';
-import { Translator } from '../../../common/src/yomitan/js/language/translator';
 
 export interface DictionaryInfo {
     title: string;
@@ -16,70 +15,22 @@ export interface DictionaryInfo {
     description?: string;
 }
 
-// Yomitan's exact internal format
-export interface Tag {
-    name: string;
-    category: string;
-    order: number;
-    score: number;
-    content: string[];
-    dictionaries: string[];
-    redundant: boolean;
-}
-
-export interface TermSource {
-    originalText: string;
-    transformedText: string;
-    deinflectedText: string;
-    matchType: string;
-    matchSource: string;
-    isPrimary: boolean;
-}
-
-export interface TermHeadword {
-    index: number;
-    term: string;
-    reading: string;
-    sources: TermSource[];
-    tags: Tag[];
-    wordClasses: string[];
-}
-
-export interface TermDefinition {
-    index: number;
-    headwordIndices: number[];
-    dictionary: string;
-    dictionaryIndex: number;
-    dictionaryAlias: string;
+export interface TermEntry {
     id: number;
+    dictionary: string;
+    expression: string;
+    reading: string;
+    definitionTags: string[];
+    rules: string[];
     score: number;
-    frequencyOrder: number;
-    sequences: number[];
-    isPrimary: boolean;
-    tags: Tag[];
-    entries: any[]; // TermGlossaryContent from dictionary-data
-}
-
-export interface TermDictionaryEntry {
-    type: 'term';
-    isPrimary: boolean;
-    inflectionRuleChainCandidates: any[];
-    score: number;
-    frequencyOrder: number;
-    dictionaryIndex: number;
-    dictionaryAlias: string;
-    sourceTermExactMatchCount: number;
-    maxOriginalTextLength: number;
-    headwords: TermHeadword[];
-    definitions: TermDefinition[];
-    pronunciations: any[];
-    frequencies: any[];
+    glossary: (string | any)[];
+    sequence: number;
+    termTags: string[];
 }
 
 export class YomitanDictionaryService {
     private db = new DictionaryDatabase();
     private importer: DictionaryImporter;
-    private translator: Translator;
     private initialized = false;
 
     /**
@@ -94,12 +45,6 @@ export class YomitanDictionaryService {
             // Initialize the importer with media loader
             const mediaLoader = new DictionaryImporterMediaLoader();
             this.importer = new DictionaryImporter(mediaLoader);
-
-            // Initialize Yomitan's Translator with our database
-            this.translator = new Translator(this.db);
-
-            // Prepare the translator to initialize language support
-            this.translator.prepare();
 
             this.initialized = true;
         } catch (error) {
@@ -137,9 +82,9 @@ export class YomitanDictionaryService {
     }
 
     /**
-     * Look up terms using Yomitan's Translator (returns properly formatted results)
+     * Look up terms in all enabled dictionaries
      */
-    async lookupTerms(expressions: string[]): Promise<Map<string, TermDictionaryEntry[]>> {
+    async lookupTerms(expressions: string[]): Promise<Map<string, TermEntry[]>> {
         if (!this.initialized) {
             throw new Error('Dictionary service not initialized. Call init() first.');
         }
@@ -147,40 +92,24 @@ export class YomitanDictionaryService {
         try {
             // Get all enabled dictionaries
             const dictionaries = await this.getDictionaries();
-            const enabledDictionaryMap = new Map(
-                dictionaries.map((dict) => [dict.title, { index: 0, priority: 0, allowSecondarySearches: false }])
-            );
+            const enabledDictionaries = new Set(dictionaries.map((dict) => dict.title));
 
-            // Prepare options for Yomitan's Translator
-            const options = {
-                removeNonJapaneseCharacters: false,
-                enabledDictionaryMap: enabledDictionaryMap,
-                excludeDictionaryDefinitions: null,
-                sortFrequencyDictionary: null,
-                sortFrequencyDictionaryOrder: 'descending',
-                language: 'ja',
-                primaryReading: 'hiragana',
-                wildcards: 'off',
-                maxResults: 1000,
-                textReplacements: [],
-                textNormalizations: null,
-                convertHalfWidthCharacters: 'false',
-                convertNumericCharacters: 'false',
-                convertAlphabeticCharacters: 'false',
-                convertHiraganaToKatakana: 'false',
-                convertKatakanaToHiragana: 'variant',
-                collapseEmphaticSequences: 'false',
-                deinflect: true
-            };
+            // Perform bulk lookup
+            const results = await this.db.findTermsBulk(expressions, enabledDictionaries);
 
-            const groupedResults = new Map<string, TermDictionaryEntry[]>();
+            // Group results by expression
+            const groupedResults = new Map<string, TermEntry[]>();
 
-            // Use Yomitan's Translator to lookup each expression
-            for (const expression of expressions) {
-                const { dictionaryEntries } = await this.translator.findTerms('group', expression, options);
-                if (dictionaryEntries.length > 0) {
-                    groupedResults.set(expression, dictionaryEntries);
+            // Results is directly an array of TermEntry objects from the database
+            for (const termEntry of results) {
+                // Use 'term' field from Yomitan's database structure
+                const term = termEntry.term;
+
+                if (!groupedResults.has(term)) {
+                    groupedResults.set(term, []);
                 }
+
+                groupedResults.get(term)!.push(termEntry);
             }
 
             return groupedResults;
@@ -189,6 +118,7 @@ export class YomitanDictionaryService {
             throw error;
         }
     }
+
 
     /**
      * Get list of installed dictionaries

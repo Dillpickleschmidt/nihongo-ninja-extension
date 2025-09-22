@@ -1,7 +1,9 @@
 /*
- * Stub for anki-note-data-creator - only implementing functions needed for dictionary import
+ * Minimal stub for anki-note-data-creator
+ * Only includes the getFrequencyHarmonic function needed by dictionary-data-util
  */
 
 export function getFrequencyHarmonic(dictionaryEntry, headwordIndex) {
-    return -1; // Default value when no frequency data
+    // Simplified stub - return 0 since we don't use frequency data in our minimal implementation
+    return 0;
 }
