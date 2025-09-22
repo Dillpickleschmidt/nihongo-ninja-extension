@@ -31,7 +31,7 @@ import {stringReverse} from '../core/utilities';
 import {getFileExtensionFromImageMediaType, getImageMediaTypeFromFileName} from '../media/media-util';
 import {compareRevisions} from './dictionary-data-util';
 
-const ajvSchemas = ajvSchemas0 as any;
+const ajvSchemas = ajvSchemas0;
 const BlobWriter = /** @type {typeof import('@zip.js/zip.js').BlobWriter} */ (/** @type {unknown} */ (BlobWriter0));
 const TextWriter = /** @type {typeof import('@zip.js/zip.js').TextWriter} */ (/** @type {unknown} */ (TextWriter0));
 const Uint8ArrayReader = /** @type {typeof import('@zip.js/zip.js').Uint8ArrayReader} */ (/** @type {unknown} */ (Uint8ArrayReader0));

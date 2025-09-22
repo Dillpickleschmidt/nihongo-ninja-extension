@@ -1,7 +1,8 @@
 import React from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import { KagomeToken } from './model';
-import SubtitleTokenPopup, { YomitanTermEntry } from '../components/SubtitleTokenPopup';
+import SubtitleTokenPopup from '../components/SubtitleTokenPopup';
+import { TermDictionaryEntry } from '../../extension/src/services/yomitan-dictionary-service';
 import { SettingsProvider } from '../settings';
 import { ExtensionSettingsStorage } from '../../extension/src/services/extension-settings-storage';
 
@@ -149,7 +150,7 @@ export class SubtitleTokenPopupManager {
         this.render();
     }
 
-    private lookupYomitanTerm = async (searchText: string): Promise<YomitanTermEntry[]> => {
+    private lookupYomitanTerm = async (searchText: string): Promise<TermDictionaryEntry[]> => {
         try {
             // Send message to background script to perform lookup - matching Kagome format
             const message = {

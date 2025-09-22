@@ -17,7 +17,7 @@
  */
 
 // import {initWasm, Resvg} from '../../lib/resvg-wasm'; // Skip RESVG for now
-const initWasm = async (...args: any[]) => {}; // Stub for lookup-only usage
+const initWasm = async (...args) => {}; // Stub for lookup-only usage
 import { createApiMap, invokeApiMapHandler } from '../core/api-map';
 import { ExtensionError } from '../core/extension-error';
 import { log } from '../core/log';
