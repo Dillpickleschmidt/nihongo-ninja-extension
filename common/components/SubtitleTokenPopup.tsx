@@ -6,6 +6,46 @@ import ChevronRightRounded from '@mui/icons-material/ChevronRightRounded';
 import { ThemeProvider } from '@mui/material/styles';
 import { createTheme } from '../theme';
 import { KagomeToken } from '../src/model';
+import './YomitanPopup.css';
+
+// Yomitan's exact glossary data types (based on their TypeScript definitions)
+type TermGlossaryString = string;
+
+type TermGlossaryText = {
+    type: 'text';
+    text: string;
+};
+
+type TermGlossaryImage = {
+    type: 'image';
+    path: string;
+    width?: number;
+    height?: number;
+    preferredWidth?: number;
+    preferredHeight?: number;
+    description?: string;
+    pixelated?: boolean;
+};
+
+type TermGlossaryStructuredContent = {
+    type: 'structured-content';
+    content: any; // Can be string, object, or array - complex structure
+};
+
+type TermGlossaryDeinflection = [
+    uninflected: string,
+    inflectionRuleChain: string[]
+];
+
+type TermGlossaryContent =
+    | TermGlossaryString
+    | TermGlossaryText
+    | TermGlossaryImage
+    | TermGlossaryStructuredContent;
+
+type TermGlossary =
+    | TermGlossaryContent
+    | TermGlossaryDeinflection;
 
 export interface YomitanTermEntry {
     expression: string;
@@ -13,7 +53,7 @@ export interface YomitanTermEntry {
     definitionTags: string;
     rules: string;
     score: number;
-    glossary: (string | any)[];
+    glossary: TermGlossary[];
     sequence: number;
     termTags: string;
     dictionary: string;
@@ -102,7 +142,7 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
                     case 'ul':
                         return <ul>{renderStructuredContent(innerContent)}</ul>;
                     case 'li':
-                        return <li>{renderStructuredContent(innerContent)}</li>;
+                        return <div style={{ marginBottom: '6px' }}>{renderStructuredContent(innerContent)}</div>;
                     default:
                         // For unknown tags, just render the content
                         return renderStructuredContent(innerContent);
@@ -144,32 +184,77 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
         }
     }, [token, onLookupYomitan]);
 
+    // Yomitan content utilities using pattern matching
+    const GlossaryUtils = {
+        // Single function to determine entry type
+        getEntryType: (entry: TermGlossary): 'string' | 'text' | 'image' | 'structured-content' | 'deinflection' => {
+            if (typeof entry === 'string') return 'string';
+            if (Array.isArray(entry)) return 'deinflection';
+            if (typeof entry === 'object' && entry !== null && 'type' in entry) {
+                return entry.type as 'text' | 'image' | 'structured-content';
+            }
+            return 'string'; // fallback
+        },
+
+        // Type-safe filtering
+        filterContent: (entries: TermGlossary[]): TermGlossaryContent[] =>
+            entries.filter(entry => GlossaryUtils.getEntryType(entry) !== 'deinflection') as TermGlossaryContent[],
+
+        filterByType: <T extends Exclude<ReturnType<typeof GlossaryUtils.getEntryType>, 'deinflection'>>(
+            entries: TermGlossary[],
+            type: T
+        ): TermGlossaryContent[] =>
+            entries.filter(entry => GlossaryUtils.getEntryType(entry) === type) as TermGlossaryContent[],
+
+        // Pattern matching for entry processing
+        processEntry: <T>(
+            entry: TermGlossary,
+            handlers: {
+                string?: (entry: TermGlossaryString) => T;
+                text?: (entry: TermGlossaryText) => T;
+                image?: (entry: TermGlossaryImage) => T;
+                'structured-content'?: (entry: TermGlossaryStructuredContent) => T;
+                deinflection?: (entry: TermGlossaryDeinflection) => T;
+                default?: (entry: TermGlossary) => T;
+            }
+        ): T | undefined => {
+            const type = GlossaryUtils.getEntryType(entry);
+            const handler = handlers[type] || handlers.default;
+            return handler?.(entry as any);
+        }
+    };
+
     const renderYomitanEntries = (entries: YomitanTermEntry[]) => {
         if (!entries.length) return null;
 
         const currentEntry = entries[currentDictionaryIndex] || entries[0];
         const meanings = Array.isArray(currentEntry.glossary) ? currentEntry.glossary : [currentEntry.glossary];
 
+        // Apply filtering to exclude deinflections
+        const definitions = GlossaryUtils.filterContent(meanings);
+
         return (
             <>
-                <div style={{ marginTop: '12px', fontSize: '1.1rem' }}>
-                    <div style={{ marginBottom: '8px', fontSize: '0.9rem', color: '#007acc', fontWeight: 'bold' }}>
-                        📚 {currentEntry.dictionary}
-                    </div>
-                    <div>
-                        {meanings.map((meaning, meaningIndex) => (
-                            <div key={meaningIndex} style={{ marginBottom: '4px' }}>
-                                • {renderStructuredContent(meaning)}
-                            </div>
+                <div className="definition-list-container">
+                    <ul className="gloss-list">
+                        {definitions.map((meaning, meaningIndex) => (
+                            <li key={meaningIndex} className="gloss-item">
+                                <span className="gloss-separator"></span>
+                                <span className="gloss-content structured-content">
+                                    {renderStructuredContent(meaning)}
+                                </span>
+                            </li>
                         ))}
-                    </div>
-
-                    {currentEntry.termTags && currentEntry.termTags.length > 0 && (
-                        <div style={{ marginTop: '8px', fontSize: '0.9rem', color: '#666' }}>
-                            Tags: {currentEntry.termTags}
-                        </div>
-                    )}
+                    </ul>
                 </div>
+
+                {currentEntry.termTags && currentEntry.termTags.length > 0 && (
+                    <div className="tag-list">
+                        <span className="tag">{currentEntry.termTags}</span>
+                    </div>
+                )}
+
+                <div className="dictionary-name">{currentEntry.dictionary}</div>
 
                 {entries.length > 1 && (
                     <div
@@ -262,7 +347,7 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
                     sx={{
                         width: 400,
                         height: 250,
-                        padding: 2,
+                        padding: 0,
                         overflow: 'auto',
                     }}
                 >
@@ -272,56 +357,56 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
                                 fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
                                 position: 'relative',
                                 height: '100%',
+                                fontSize: '14px',
+                                lineHeight: '1.43',
                             }}
                         >
-                            <h2 style={{ display: 'inline', fontSize: '1.75rem', margin: 0 }}>
-                                {yomitanData && yomitanData.length > 0 && currentDictionaryIndex < yomitanData.length
-                                    ? yomitanData[currentDictionaryIndex].expression
-                                    : token.surface_form}
-                            </h2>
-                            <span style={{ color: '#666', marginLeft: '8px', fontSize: '1.25rem' }}>
-                                (
-                                {yomitanData && yomitanData.length > 0 && currentDictionaryIndex < yomitanData.length
-                                    ? yomitanData[currentDictionaryIndex].reading
-                                    : token.pronunciation}
-                                )
-                            </span>
-                            <div
-                                style={{
-                                    fontSize: '1rem',
-                                    marginTop: '4px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                }}
-                            >
-                                <span>
-                                    {token.pos
-                                        .split(',')
-                                        .filter((p) => p !== '*')
-                                        .join(', ')}
-                                </span>
-                            </div>
-
-                            {isLoading && (
-                                <div style={{ textAlign: 'center', marginTop: '16px', fontSize: '1rem' }}>
-                                    Loading dictionary...
-                                </div>
-                            )}
-
-                            {yomitanData && yomitanData.length > 0 ? (
-                                renderYomitanEntries(yomitanData)
-                            ) : !isLoading ? (
-                                <div
-                                    style={{ marginTop: '16px', textAlign: 'center', color: '#666', fontSize: '1rem' }}
-                                >
-                                    No dictionary entries found.
-                                    <br />
-                                    <span style={{ fontSize: '0.9rem' }}>
-                                        Import dictionaries in Settings → Dictionary tab
+                            <div className="entry">
+                                <div className="headword-list">
+                                    <span className="headword-term">
+                                        {yomitanData &&
+                                        yomitanData.length > 0 &&
+                                        currentDictionaryIndex < yomitanData.length
+                                            ? yomitanData[currentDictionaryIndex].expression
+                                            : token.surface_form}
+                                    </span>
+                                    <span className="headword-reading">
+                                        {yomitanData &&
+                                        yomitanData.length > 0 &&
+                                        currentDictionaryIndex < yomitanData.length
+                                            ? yomitanData[currentDictionaryIndex].reading
+                                            : token.pronunciation}
                                     </span>
                                 </div>
-                            ) : null}
+                                <div className="tag-list">
+                                    <span className="tag">
+                                        {token.pos
+                                            .split(',')
+                                            .filter((p) => p !== '*')
+                                            .join(', ')}
+                                    </span>
+                                </div>
+
+                                {isLoading && (
+                                    <div style={{ textAlign: 'center', marginTop: '16px', fontSize: '1rem' }}>
+                                        Loading dictionary...
+                                    </div>
+                                )}
+
+                                {yomitanData && yomitanData.length > 0 ? (
+                                    renderYomitanEntries(yomitanData)
+                                ) : !isLoading ? (
+                                    <div
+                                        style={{ marginTop: '16px', textAlign: 'center', color: '#666', fontSize: '1rem' }}
+                                    >
+                                        No dictionary entries found.
+                                        <br />
+                                        <span style={{ fontSize: '0.9rem' }}>
+                                            Import dictionaries in Settings → Dictionary tab
+                                        </span>
+                                    </div>
+                                ) : null}
+                            </div>
                         </div>
                     ) : (
                         <div>No token data available</div>

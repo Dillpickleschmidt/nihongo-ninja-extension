@@ -1,0 +1,155 @@
+/* Simplified Yomitan-style CSS for dictionary popup */
+
+/* Core variables */
+:root {
+    --font-size-no-units: 14;
+    --font-size: calc(1px * var(--font-size-no-units));
+    --headword-font-size-no-units: 2;
+    --headword-font-size: calc(1em * var(--headword-font-size-no-units));
+    --headword-reading-font-size: calc(0.75 * var(--headword-font-size));
+    --line-height-no-units: 20;
+    --line-height: calc(var(--line-height-no-units) / var(--font-size-no-units));
+    --entry-vertical-padding: 0.5em;
+    --entry-horizontal-padding: 0.72em;
+    --list-padding: 1.4em;
+    --tag-font-size: calc(1em * 11 / 14);
+    --tag-height: calc(1em * 20 / 14);
+    --tag-border-radius: 0.25em;
+}
+
+/* Entry container */
+.entry {
+    padding: var(--entry-vertical-padding) var(--entry-horizontal-padding);
+    position: relative;
+}
+
+.definition-list-container {
+    margin: 0;
+    padding: 0;
+}
+
+/* Headwords */
+.headword-list {
+    margin: 0 0 0.5em 0;
+}
+
+.headword-term {
+    font-size: var(--headword-font-size);
+    font-weight: normal;
+    margin-right: 0.5em;
+}
+
+.headword-reading {
+    font-size: var(--headword-reading-font-size);
+    color: #666;
+}
+
+/* Part of speech tags */
+.tag-list {
+    margin: 0.3em 0 0.5em 0;
+}
+
+.tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 0.375em;
+    margin: 0 0.375em 0 0;
+    min-height: var(--tag-height);
+    font-size: var(--tag-font-size);
+    border-radius: var(--tag-border-radius);
+    background-color: #8a8a91;
+    color: white;
+    text-decoration: none;
+    vertical-align: baseline;
+}
+
+/* Definition lists */
+.definition-list {
+    margin: 0;
+    padding: 0 0 0 var(--list-padding);
+    list-style-type: decimal;
+}
+
+.definition-list[data-count='0'],
+.definition-list[data-count='1'] {
+    padding-left: 0;
+    list-style-type: none;
+}
+
+.definition-item {
+    margin: 0.36em 0;
+    line-height: var(--line-height);
+}
+
+.definition-item:first-child {
+    margin-top: 0;
+}
+
+.definition-item:last-child {
+    margin-bottom: 0;
+}
+
+/* Gloss lists */
+.gloss-list {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+}
+
+.gloss-item {
+    margin: 0.36em 0;
+    line-height: var(--line-height);
+    display: flex;
+    align-items: flex-start;
+}
+
+.gloss-item:first-child {
+    margin-top: 0;
+}
+
+.gloss-item:last-child {
+    margin-bottom: 0;
+}
+
+.gloss-separator {
+    margin-right: 0.36em;
+    flex-shrink: 0;
+}
+
+.gloss-separator::after {
+    content: '•';
+    color: #666;
+}
+
+.gloss-content {
+    flex: 1;
+}
+
+/* Dictionary source */
+.dictionary-name {
+    font-size: 0.85em;
+    color: #999;
+    margin-top: 1em;
+    font-style: italic;
+}
+
+/* Structured content spacing */
+.structured-content div {
+    margin: 0.36em 0;
+}
+
+.structured-content div:first-child {
+    margin-top: 0;
+}
+
+.structured-content div:last-child {
+    margin-bottom: 0;
+}
+
+/* Example sentences with lang="ja" */
+.structured-content div[lang="ja"] {
+    margin: 0.72em 0;
+    padding-left: 1em;
+    border-left: 2px solid #ddd;
+    font-style: italic;
+}
