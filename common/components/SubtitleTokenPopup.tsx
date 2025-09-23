@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import Popover from '@mui/material/Popover';
-import Paper from '@mui/material/Paper';
 import ChevronLeftRounded from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRounded from '@mui/icons-material/ChevronRightRounded';
 import { ThemeProvider } from '@mui/material/styles';
@@ -36,20 +35,11 @@ type TermGlossaryStructuredContent = {
     content: any; // Can be string, object, or array - complex structure
 };
 
-type TermGlossaryDeinflection = [
-    uninflected: string,
-    inflectionRuleChain: string[]
-];
+type TermGlossaryDeinflection = [uninflected: string, inflectionRuleChain: string[]];
 
-type TermGlossaryContent =
-    | TermGlossaryString
-    | TermGlossaryText
-    | TermGlossaryImage
-    | TermGlossaryStructuredContent;
+type TermGlossaryContent = TermGlossaryString | TermGlossaryText | TermGlossaryImage | TermGlossaryStructuredContent;
 
-type TermGlossary =
-    | TermGlossaryContent
-    | TermGlossaryDeinflection;
+type TermGlossary = TermGlossaryContent | TermGlossaryDeinflection;
 
 export interface YomitanTermEntry {
     expression: string;
@@ -70,9 +60,7 @@ const addScopeToCss = (css: string, scopeSelector: string): string => {
 };
 
 const addDictionaryScopeToCss = (css: string, dictionaryTitle: string): string => {
-    const escapedTitle = dictionaryTitle
-        .replace(/\\/g, '\\\\')
-        .replace(/"/g, '\\"');
+    const escapedTitle = dictionaryTitle.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
     return addScopeToCss(css, `[data-dictionary="${escapedTitle}"]`);
 };
 
@@ -138,39 +126,38 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
     const renderStructuredContent = (content: any): React.ReactNode => {
         if (!content) return null;
 
-            // Handle string
-            if (typeof content === 'string') {
-                return content;
+        // Handle string
+        if (typeof content === 'string') {
+            return content;
+        }
+
+        // Handle array
+        if (Array.isArray(content)) {
+            return content.map((item, index) => (
+                <React.Fragment key={index}>{renderStructuredContent(item)}</React.Fragment>
+            ));
+        }
+
+        // Handle structured content object
+        if (typeof content === 'object') {
+            // Structured content wrapper
+            if (content.type === 'structured-content') {
+                return renderStructuredContent(content.content);
             }
 
-            // Handle array
-            if (Array.isArray(content)) {
-                return content.map((item, index) => (
-                    <React.Fragment key={index}>{renderStructuredContent(item)}</React.Fragment>
-                ));
-            }
+            // DOM element
+            if (content.tag) {
+                const { tag, content: innerContent, title, lang, data } = content;
 
-            // Handle structured content object
-            if (typeof content === 'object') {
-                // Structured content wrapper
-                if (content.type === 'structured-content') {
-                    return renderStructuredContent(content.content);
+                // Language detection
+                let detectedLanguage = lang;
+                if (!detectedLanguage && typeof innerContent === 'string') {
+                    detectedLanguage = getLanguageFromText(innerContent, null);
                 }
 
-                // DOM element
-                if (content.tag) {
-                    const { tag, content: innerContent, title, lang, data } = content;
-
-
-                    // Language detection
-                    let detectedLanguage = lang;
-                    if (!detectedLanguage && typeof innerContent === 'string') {
-                        detectedLanguage = getLanguageFromText(innerContent, null);
-                    }
-
-                    // Generate CSS class and data attributes
-                    const className = `gloss-sc-${tag}`;
-                    const dataAttributes = convertDataToAttributes(data);
+                // Generate CSS class and data attributes
+                const className = `gloss-sc-${tag}`;
+                const dataAttributes = convertDataToAttributes(data);
 
                 // Comprehensive structured content element support based on schema
                 switch (tag) {
@@ -225,18 +212,16 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
                         // Yomitan wraps tables in a container with special class
                         const tableElement = (
                             <table className={className} {...dataAttributes}>
-                                {Array.isArray(innerContent) && innerContent.length > 0 && innerContent[0]?.tag === 'tr' ? (
+                                {Array.isArray(innerContent) &&
+                                innerContent.length > 0 &&
+                                innerContent[0]?.tag === 'tr' ? (
                                     <tbody>{renderStructuredContent(innerContent)}</tbody>
                                 ) : (
                                     renderStructuredContent(innerContent)
                                 )}
                             </table>
                         );
-                        return (
-                            <div className="gloss-sc-table-container">
-                                {tableElement}
-                            </div>
-                        );
+                        return <div className="gloss-sc-table-container">{tableElement}</div>;
                     case 'tbody':
                         return (
                             <tbody className={className} {...dataAttributes}>
@@ -310,11 +295,7 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
                     case 'details':
                         const { open } = content;
                         return (
-                            <details
-                                className={className}
-                                {...dataAttributes}
-                                {...(open && { open })}
-                            >
+                            <details className={className} {...dataAttributes} {...(open && { open })}>
                                 {renderStructuredContent(innerContent)}
                             </details>
                         );
@@ -328,7 +309,6 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
                     // Link support
                     case 'a':
                         const { href } = content;
-
 
                         return (
                             <a
@@ -344,7 +324,6 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
                     // Image support
                     case 'img':
                         const { path, alt, width, height } = content;
-
 
                         return (
                             <img
@@ -417,7 +396,7 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
 
         // Type-safe filtering to exclude deinflections
         filterContent: (entries: TermGlossary[]): TermGlossaryContent[] =>
-            entries.filter(entry => GlossaryUtils.getEntryType(entry) !== 'deinflection') as TermGlossaryContent[]
+            entries.filter((entry) => GlossaryUtils.getEntryType(entry) !== 'deinflection') as TermGlossaryContent[],
     };
 
     // Schema-exact glossary content normalization (3 formats only)
@@ -426,7 +405,7 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
 
         const glossaryArray = Array.isArray(glossary) ? glossary : [glossary];
 
-        return glossaryArray.map(item => {
+        return glossaryArray.map((item) => {
             // Schema format 1: Simple string
             if (typeof item === 'string') {
                 return item;
@@ -467,9 +446,7 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
 
         return (
             <div className="yomitan-glossary">
-                {scopedCss && (
-                    <style dangerouslySetInnerHTML={{ __html: scopedCss }} />
-                )}
+                {scopedCss && <style dangerouslySetInnerHTML={{ __html: scopedCss }} />}
                 <div data-dictionary={currentEntry.dictionary}>
                     <div className="definition-list-container">
                         <ul className="gloss-list">
@@ -563,6 +540,19 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
                     root: {
                         'aria-hidden': false,
                     },
+                    paper: {
+                        sx: {
+                            width: 450,
+                            height: 300,
+                            padding: 0,
+                            overflow: 'auto',
+                            ...(themeType === 'dark' && {
+                                backgroundColor: 'rgba(18, 18, 18, 0.92) !important',
+                                backgroundImage: 'none !important',
+                                backdropFilter: 'blur(12px)',
+                            }),
+                        },
+                    },
                 }}
                 anchorOrigin={{
                     vertical: 'top',
@@ -580,75 +570,71 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
                     },
                 }}
             >
-                <Paper
-                    sx={{
-                        width: 400,
-                        height: 250,
-                        padding: 0,
-                        overflow: 'auto',
-                    }}
-                >
-                    {token ? (
-                        <div
-                            style={{
-                                fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-                                position: 'relative',
-                                height: '100%',
-                                fontSize: 'var(--font-size)',
-                                lineHeight: 'var(--line-height)',
-                            }}
-                        >
-                            <div className="entry">
-                                <div className="headword-list">
-                                    <span className="headword-term">
-                                        {yomitanData &&
-                                        yomitanData.length > 0 &&
-                                        currentDictionaryIndex < yomitanData.length
-                                            ? yomitanData[currentDictionaryIndex].expression
-                                            : token.surface_form}
-                                    </span>
-                                    <span className="headword-reading">
-                                        {yomitanData &&
-                                        yomitanData.length > 0 &&
-                                        currentDictionaryIndex < yomitanData.length
-                                            ? yomitanData[currentDictionaryIndex].reading
-                                            : token.pronunciation}
-                                    </span>
-                                </div>
-                                <div className="tag-list">
-                                    <span className="tag">
-                                        {token.pos
-                                            .split(',')
-                                            .filter((p) => p !== '*')
-                                            .join(', ')}
-                                    </span>
-                                </div>
-
-                                {isLoading && (
-                                    <div style={{ textAlign: 'center', marginTop: '16px', fontSize: '1rem' }}>
-                                        Loading dictionary...
-                                    </div>
-                                )}
-
-                                {yomitanData && yomitanData.length > 0 ? (
-                                    renderYomitanEntries(yomitanData)
-                                ) : !isLoading ? (
-                                    <div
-                                        style={{ marginTop: '16px', textAlign: 'center', color: '#666', fontSize: '1rem' }}
-                                    >
-                                        No dictionary entries found.
-                                        <br />
-                                        <span style={{ fontSize: '0.9rem' }}>
-                                            Import dictionaries in Settings → Dictionary tab
-                                        </span>
-                                    </div>
-                                ) : null}
+                {token ? (
+                    <div
+                        style={{
+                            fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                            position: 'relative',
+                            height: '100%',
+                            fontSize: 'var(--font-size)',
+                            lineHeight: 'var(--line-height)',
+                        }}
+                    >
+                        <div className="entry">
+                            <div className="headword-list">
+                                <span className="headword-term">
+                                    {yomitanData &&
+                                    yomitanData.length > 0 &&
+                                    currentDictionaryIndex < yomitanData.length
+                                        ? yomitanData[currentDictionaryIndex].expression
+                                        : token.surface_form}
+                                </span>
+                                <span className="headword-reading">
+                                    {yomitanData &&
+                                    yomitanData.length > 0 &&
+                                    currentDictionaryIndex < yomitanData.length
+                                        ? yomitanData[currentDictionaryIndex].reading
+                                        : token.pronunciation}
+                                </span>
                             </div>
+                            <div className="tag-list">
+                                <span className="tag">
+                                    {token.pos
+                                        .split(',')
+                                        .filter((p) => p !== '*')
+                                        .join(', ')}
+                                </span>
+                            </div>
+
+                            {isLoading && (
+                                <div style={{ textAlign: 'center', marginTop: '16px', fontSize: '1rem' }}>
+                                    Loading dictionary...
+                                </div>
+                            )}
+
+                            {yomitanData && yomitanData.length > 0 ? (
+                                renderYomitanEntries(yomitanData)
+                            ) : !isLoading ? (
+                                <div
+                                    style={{
+                                        marginTop: '16px',
+                                        textAlign: 'center',
+                                        color: '#666',
+                                        fontSize: '1rem',
+                                    }}
+                                >
+                                    No dictionary entries found.
+                                    <br />
+                                    <span style={{ fontSize: '0.9rem' }}>
+                                        Import dictionaries in Settings → Dictionary tab
+                                    </span>
+                                </div>
+                            ) : null}
                         </div>
-                    ) : (
-                        <div>No token data available</div>
-                    )}
-                </Paper>
+                    </div>
+                ) : (
+                    <div>No token data available</div>
+                )}
             </Popover>
         </ThemeProvider>
     );

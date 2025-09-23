@@ -29,7 +29,7 @@
     --inflection-separator: '\00AB';
 
     /* Layout */
-    --font-size-no-units: 14;
+    --font-size-no-units: 16;
     --font-size: calc(1px * var(--font-size-no-units));
     --query-parser-font-size-no-units: 2;
     --query-parser-font-size: calc(1em * var(--query-parser-font-size-no-units));
