@@ -41,7 +41,9 @@ export class YomitanDictionaryService {
      * Initialize the dictionary database
      */
     async init(): Promise<void> {
-        if (this.initialized) return;
+        if (this.initialized) {
+            return;
+        }
 
         try {
             await this.db.prepare();
@@ -122,7 +124,6 @@ export class YomitanDictionaryService {
             throw error;
         }
     }
-
 
     /**
      * Get list of installed dictionaries
@@ -206,4 +207,3 @@ export class YomitanDictionaryService {
         }
     }
 }
-

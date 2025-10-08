@@ -1389,7 +1389,55 @@ export default function SettingsForm({
         settingsFileInputRef.current?.click();
     }, []);
 
+    // Helper function to send dictionary import message to background
+    const sendDictionaryImport = useCallback(async (fileName: string, fileData: ArrayBuffer) => {
+        const response = await browser.runtime.sendMessage({
+            sender: 'settings-ui',
+            message: {
+                command: 'dictionary-import',
+                fileName,
+                fileData,
+            },
+        });
+
+        if (response?.success) {
+            console.log(`Dictionary import started in background: ${fileName}`);
+        } else {
+            console.error('Failed to start dictionary import:', response?.error);
+        }
+
+        return response;
+    }, []);
+
+    const handleGetRecommendedDictionary = useCallback(async () => {
+        try {
+            const result = await browser.runtime.sendMessage({
+                sender: 'settings-ui',
+                message: {
+                    command: 'dictionary-download-import',
+                },
+            });
+
+            if (result?.success) {
+                console.log('Jitendex download started in background');
+            } else {
+                console.error('Failed to start dictionary download:', result?.error);
+            }
+        } catch (error) {
+            console.error('Failed to start recommended dictionary download:', error);
+        }
+    }, []);
+
     const handleImportDictionary = useCallback(async () => {
+        // If in popup context, open options page instead
+        if (window.location.pathname.includes('popup')) {
+            browser.tabs.create({
+                url: browser.runtime.getURL('/options.html#dictionary-settings'),
+            });
+            return;
+        }
+
+        // Otherwise, show file picker (options page context)
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = '.zip';
@@ -1398,17 +1446,17 @@ export default function SettingsForm({
             if (!file || !file.name.endsWith('.zip')) return;
 
             try {
-                const { YomitanDictionaryService } = await import('../../extension/src/services/yomitan-dictionary-service');
-                const service = new YomitanDictionaryService();
-                await service.init();
-                await service.importDictionary(file);
-                console.log(`Successfully imported dictionary: ${file.name}`);
+                // Convert file to ArrayBuffer (can be sent via message)
+                const arrayBuffer = await file.arrayBuffer();
+
+                // Send to background service worker using helper
+                await sendDictionaryImport(file.name, arrayBuffer);
             } catch (error) {
-                console.error('Failed to import dictionary:', error);
+                console.error('Failed to send dictionary import request:', error);
             }
         };
         input.click();
-    }, []);
+    }, [sendDictionaryImport]);
     const handleExportSettings = useCallback(() => {
         const now = new Date();
         const timeString = `${now.getFullYear()}-${
@@ -1608,6 +1656,13 @@ export default function SettingsForm({
                     </Typography>
                     <Button
                         variant="contained"
+                        onClick={handleGetRecommendedDictionary}
+                        style={{ marginBottom: 8, marginRight: 8 }}
+                    >
+                        Get Recommended Dictionary (Jitendex)
+                    </Button>
+                    <Button
+                        variant="outlined"
                         onClick={handleImportDictionary}
                         style={{ marginBottom: 8 }}
                     >

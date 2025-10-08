@@ -24,6 +24,14 @@ import {EventListenerCollection} from '../core/event-listener-collection';
 export class DictionaryImporterMediaLoader {
     /** @type {import('dictionary-importer-media-loader').GetImageDetailsFunction} */
     getImageDetails(content, mediaType, transfer) {
+        if (Array.isArray(transfer)) { transfer.push(content); }
+
+        // Service workers don't have Image API - skip validation but still import images
+        if (typeof Image === 'undefined') {
+            return Promise.resolve({content, width: 0, height: 0});
+        }
+
+        // Window context: use existing Image validation
         return new Promise((resolve, reject) => {
             const image = new Image();
             const eventListeners = new EventListenerCollection();
@@ -34,7 +42,6 @@ export class DictionaryImporterMediaLoader {
             };
             eventListeners.addEventListener(image, 'load', () => {
                 const {naturalWidth: width, naturalHeight: height} = image;
-                if (Array.isArray(transfer)) { transfer.push(content); }
                 cleanup();
                 resolve({content, width, height});
             }, false);

@@ -62,6 +62,10 @@ import ClearCopyHistoryHandler from '@/handlers/asbplayerv2/clear-copy-history-h
 import SaveCopyHistoryHandler from '@/handlers/asbplayerv2/save-copy-history-handler';
 import KagomeAnalysisHandler from '@/handlers/kagome/kagome-analysis-handler';
 import DictionaryLookupHandler from '@/handlers/dictionary/dictionary-lookup-handler';
+import {
+    DictionaryImportHandler,
+    DictionaryDownloadImportHandler,
+} from '@/handlers/dictionary/dictionary-import-handlers';
 
 export default defineBackground(() => {
     if (!isFirefoxBuild) {
@@ -150,6 +154,8 @@ export default defineBackground(() => {
         new RefreshSettingsHandler(tabRegistry, settings),
         new KagomeAnalysisHandler(),
         new DictionaryLookupHandler(),
+        new DictionaryImportHandler(),
+        new DictionaryDownloadImportHandler(),
         new VideoToAsbplayerCommandForwardingHandler(tabRegistry),
         new AsbplayerToVideoCommandForwardingHandler(),
         new AsbplayerHeartbeatHandler(tabRegistry),

@@ -81,8 +81,10 @@ export class DictionaryDatabase {
      * do upgrades for the IndexedDB schema (basically limited to adding new stores when needed)
      */
     async prepare() {
-        // do not do upgrades in web workers as they are considered to be children of the main thread and are not responsible for database upgrades
-        const isWorker = self.constructor.name !== 'Window';
+        // Service workers ARE the main context in MV3 extensions and must run DB upgrades
+        // Only skip upgrades for dedicated/shared web workers
+        const isWorker = self.constructor.name === 'DedicatedWorkerGlobalScope' ||
+                         self.constructor.name === 'SharedWorkerGlobalScope';
         const upgrade =
             /** @type {import('database').StructureDefinition<import('dictionary-database').ObjectStoreName>[]?} */
             [
@@ -163,7 +165,8 @@ export class DictionaryDatabase {
         await this._db.open(this._dbName, 60, isWorker ? null : upgrade);
 
         // when we are not a worker ourselves, create a worker which is basically just a wrapper around this class, which we can use to offload some functions to
-        if (!isWorker) {
+        // Note: Service workers don't have access to Worker API
+        if (!isWorker && typeof Worker !== 'undefined') {
             this._worker = new Worker('/js/dictionary/dictionary-database-worker-main.js', { type: 'module' });
             this._worker.addEventListener('error', (event) => {
                 log.log('Worker terminated with error:', event);

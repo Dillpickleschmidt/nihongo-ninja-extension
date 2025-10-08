@@ -740,11 +740,6 @@ export default class KagomeAnalysisHandler {
 
         const allTokens = self.kagome_tokenize(combinedText);
 
-        // DEBUG: Inspect token structure
-        console.log('[Kagome Debug] Sample tokens (first 3):', allTokens.slice(0, 3));
-        console.log('[Kagome Debug] Total tokens returned:', allTokens.length);
-        console.log('[Kagome Debug] Number of texts in chunk:', texts.length);
-
         // Map tokens back to their original texts using delimiter-based approach
         // Each separator token marks the boundary between texts
         const tokenArrays: any[][] = [];
@@ -765,15 +760,6 @@ export default class KagomeAnalysisHandler {
         if (currentTokens.length > 0 || tokenArrays.length < texts.length) {
             tokenArrays.push(currentTokens);
         }
-
-        // DEBUG: Show distribution of tokens across texts
-        const tokenCounts = tokenArrays.map((arr) => arr.length);
-        console.log('[Kagome Debug] Tokens per text (first 10):', tokenCounts.slice(0, 10));
-        console.log('[Kagome Debug] Empty text count:', tokenCounts.filter((c) => c === 0).length);
-        console.log(
-            '[Kagome Debug] Total tokens mapped:',
-            tokenCounts.reduce((a, b) => a + b, 0)
-        );
 
         return tokenArrays;
     }
