@@ -536,6 +536,7 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
                 open={open}
                 anchorEl={anchorEl}
                 onClose={onClose}
+                // disableScrollLock={true}
                 slotProps={{
                     root: {
                         'aria-hidden': false,

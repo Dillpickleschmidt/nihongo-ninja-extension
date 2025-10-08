@@ -263,9 +263,6 @@
 :root[data-page-type=popup]:not([data-theme]) body {
     background-color: transparent;
 }
-body {
-    overflow: hidden;
-}
 ol, ul {
     margin-top: 0;
     margin-bottom: var(--list-padding);
