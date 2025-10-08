@@ -25,13 +25,6 @@ export async function loadKagomeWasm() {
 
             console.log('[Kagome Client] Loading WASM...');
             const wasmUrl = `${base}kagome/kagome.wasm`;
-            const wasmResponse = await fetch(wasmUrl);
-
-            if (!wasmResponse.ok) {
-                throw new Error(`Failed to fetch WASM: ${wasmResponse.status}`);
-            }
-
-            const wasmBytes = await wasmResponse.arrayBuffer();
 
             // Use the official Go class from wasm_exec.js
             const go = new (window as any).Go();
@@ -47,7 +40,8 @@ export async function loadKagomeWasm() {
                 }
             }
 
-            const result = await WebAssembly.instantiate(wasmBytes, go.importObject);
+            console.log('[Kagome Client] Compiling and instantiating WASM...');
+            const result = await WebAssembly.instantiateStreaming(fetch(wasmUrl), go.importObject);
 
             console.log('[Kagome Client] Running Go program...');
             await go.run(result.instance);
