@@ -555,6 +555,10 @@ export default class SubtitleController {
         this.notificationElementOverlay.refresh();
     }
 
+    forceRerender() {
+        this.showingSubtitles = undefined;
+    }
+
     currentSubtitle(): [SubtitleModel | null, SubtitleModel[] | null] {
         const now = 1000 * this.video.currentTime;
         let subtitle = null;

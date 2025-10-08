@@ -1581,6 +1581,7 @@ export default class Binding {
                     // Refresh currently displayed subtitles to show tokens immediately
                     // Note: cacheHtml() processes in chunks to avoid UI freeze
                     this.subtitleController.cacheHtml().then(() => {
+                        this.subtitleController.forceRerender();
                         this.subtitleController.refresh();
                         console.log('[Binding] Batch kagome analysis complete');
                     });
