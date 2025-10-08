@@ -6,6 +6,13 @@ import { TermDictionaryEntry } from '../../extension/src/services/yomitan-dictio
 import { SettingsProvider } from '../settings';
 import { ExtensionSettingsStorage } from '../../extension/src/services/extension-settings-storage';
 
+// Global token map (populated by SubtitleController)
+declare global {
+    interface Window {
+        kagomeTokensBySubtitle?: Map<number, KagomeToken[]>;
+    }
+}
+
 export class SubtitleTokenPopupManager {
     private container: HTMLDivElement | null = null;
     private root: Root | null = null;
@@ -17,9 +24,11 @@ export class SubtitleTokenPopupManager {
     private clearTokenTimeout: number | null = null;
     private settings: SettingsProvider;
 
-    initialize() {
+    constructor() {
         this.settings = new SettingsProvider(new ExtensionSettingsStorage());
+    }
 
+    initialize() {
         // Create popup container
         this.container = document.createElement('div');
         this.container.id = 'asbplayer-subtitle-popup-container';
@@ -87,11 +96,23 @@ export class SubtitleTokenPopupManager {
     };
 
     private tryShowPopup(element: HTMLElement) {
-        const tokenData = element.getAttribute('data-token');
-        if (!tokenData) return;
+        const subtitleIndexStr = element.getAttribute('data-subtitle-index');
+        const tokenIndexStr = element.getAttribute('data-token-index');
+
+        if (!subtitleIndexStr || !tokenIndexStr) return;
 
         try {
-            const token: KagomeToken = JSON.parse(tokenData.replace(/&quot;/g, '"'));
+            const subtitleIndex = parseInt(subtitleIndexStr, 10);
+            const tokenIndex = parseInt(tokenIndexStr, 10);
+
+            // Look up token from global map
+            const tokens = window.kagomeTokensBySubtitle?.get(subtitleIndex);
+            if (!tokens || tokenIndex >= tokens.length) {
+                console.warn('Token not found in global map:', { subtitleIndex, tokenIndex });
+                return;
+            }
+
+            const token = tokens[tokenIndex];
 
             // Skip tokens with part of speech starting with "記号" (symbols)
             if (token.pos.startsWith('記号')) {
@@ -106,7 +127,7 @@ export class SubtitleTokenPopupManager {
 
             this.showPopup(element, token);
         } catch (error) {
-            console.error('Failed to parse token data:', error);
+            console.error('Failed to lookup token:', error);
         }
     }
 

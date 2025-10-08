@@ -1578,13 +1578,12 @@ export default class Binding {
                         }
                     });
 
-                    // Single cache refresh after all tokens are stored
-                    this.subtitleController.cacheHtml();
-
                     // Refresh currently displayed subtitles to show tokens immediately
-                    this.subtitleController.refresh();
-
-                    console.log('[Binding] Batch kagome analysis complete, cache refreshed');
+                    // Note: cacheHtml() processes in chunks to avoid UI freeze
+                    this.subtitleController.cacheHtml().then(() => {
+                        this.subtitleController.refresh();
+                        console.log('[Binding] Batch kagome analysis complete');
+                    });
                 }
             })
             .catch((error) => {

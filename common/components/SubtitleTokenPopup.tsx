@@ -44,12 +44,12 @@ type TermGlossary = TermGlossaryContent | TermGlossaryDeinflection;
 export interface YomitanTermEntry {
     expression: string;
     reading: string;
-    definitionTags: string;
-    rules: string;
+    definitionTags: string[];
+    rules: string[];
     score: number;
     glossary: TermGlossary[];
     sequence: number;
-    termTags: string;
+    termTags: string[];
     dictionary: string;
     styles?: string; // Dictionary-specific CSS styles
 }
@@ -463,7 +463,11 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
 
                     {currentEntry.termTags && currentEntry.termTags.length > 0 && (
                         <div className="tag-list">
-                            <span className="tag">{currentEntry.termTags}</span>
+                            {currentEntry.termTags.map((tag, i) => (
+                                <span key={i} className="tag">
+                                    {tag}
+                                </span>
+                            ))}
                         </div>
                     )}
 

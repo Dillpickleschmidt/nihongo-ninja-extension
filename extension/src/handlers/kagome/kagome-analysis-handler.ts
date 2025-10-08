@@ -669,14 +669,7 @@ export default class KagomeAnalysisHandler {
 
         console.log('[Kagome Background] Batch analyzing', kagomeMessage.texts.length, 'texts');
 
-        Promise.all(
-            kagomeMessage.texts.map((text) =>
-                this.analyzeText(text).catch((error) => {
-                    console.warn('[Kagome Background] Failed to analyze:', text, error);
-                    return [];
-                })
-            )
-        )
+        this.analyzeBatch(kagomeMessage.texts)
             .then((results) => {
                 const response = {
                     results: results.map((tokens, index) => ({
@@ -693,6 +686,96 @@ export default class KagomeAnalysisHandler {
             });
 
         return true;
+    }
+
+    private async analyzeBatch(texts: string[]): Promise<any[][]> {
+        // Filter to only Japanese texts first
+        const japaneseIndices: number[] = [];
+        const japaneseTexts: string[] = [];
+
+        texts.forEach((text, index) => {
+            if (/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text)) {
+                japaneseIndices.push(index);
+                japaneseTexts.push(text);
+            }
+        });
+
+        // If no Japanese texts, return empty arrays for all
+        if (japaneseTexts.length === 0) {
+            return texts.map(() => []);
+        }
+
+        // Load WASM once for the batch
+        await loadKagomeWasm();
+
+        // Process in chunks of 1000 (proven optimal batch size from japanese-subtitle-search)
+        const BATCH_SIZE = 1000;
+        const allTokenArrays: any[][] = [];
+
+        for (let i = 0; i < japaneseTexts.length; i += BATCH_SIZE) {
+            const chunk = japaneseTexts.slice(i, Math.min(i + BATCH_SIZE, japaneseTexts.length));
+            const chunkTokens = await this.processBatchChunk(chunk);
+            allTokenArrays.push(...chunkTokens);
+        }
+
+        // Map results back to original positions (including non-Japanese texts)
+        const results: any[][] = new Array(texts.length).fill(null).map(() => []);
+        japaneseIndices.forEach((originalIndex, japaneseIndex) => {
+            results[originalIndex] = allTokenArrays[japaneseIndex] || [];
+        });
+
+        return results;
+    }
+
+    private async processBatchChunk(texts: string[]): Promise<any[][]> {
+        // Concatenate all texts with Unicode Unit Separator (U+001F)
+        // This control character is designed as a record separator and never appears in subtitle text
+        const SEPARATOR = '\x1F';
+        const combinedText = texts.join(SEPARATOR);
+
+        // Call Kagome once with concatenated text
+        if (typeof self.kagome_tokenize !== 'function') {
+            throw new Error('kagome_tokenize function not available');
+        }
+
+        const allTokens = self.kagome_tokenize(combinedText);
+
+        // DEBUG: Inspect token structure
+        console.log('[Kagome Debug] Sample tokens (first 3):', allTokens.slice(0, 3));
+        console.log('[Kagome Debug] Total tokens returned:', allTokens.length);
+        console.log('[Kagome Debug] Number of texts in chunk:', texts.length);
+
+        // Map tokens back to their original texts using delimiter-based approach
+        // Each separator token marks the boundary between texts
+        const tokenArrays: any[][] = [];
+        let currentTokens: any[] = [];
+
+        for (const token of allTokens) {
+            if (token.surface_form === SEPARATOR) {
+                // Separator marks end of current text
+                tokenArrays.push(currentTokens);
+                currentTokens = [];
+            } else {
+                // Add token to current text
+                currentTokens.push(token);
+            }
+        }
+
+        // Don't forget the last text (no trailing separator)
+        if (currentTokens.length > 0 || tokenArrays.length < texts.length) {
+            tokenArrays.push(currentTokens);
+        }
+
+        // DEBUG: Show distribution of tokens across texts
+        const tokenCounts = tokenArrays.map((arr) => arr.length);
+        console.log('[Kagome Debug] Tokens per text (first 10):', tokenCounts.slice(0, 10));
+        console.log('[Kagome Debug] Empty text count:', tokenCounts.filter((c) => c === 0).length);
+        console.log(
+            '[Kagome Debug] Total tokens mapped:',
+            tokenCounts.reduce((a, b) => a + b, 0)
+        );
+
+        return tokenArrays;
     }
 
     private async analyzeText(text: string): Promise<any[]> {
