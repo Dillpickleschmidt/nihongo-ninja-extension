@@ -548,12 +548,14 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
                 {groupedEntries.length > 1 && (
                     <div
                         style={{
-                            position: 'absolute',
+                            position: 'sticky',
                             bottom: '8px',
                             right: '8px',
                             display: 'flex',
                             alignItems: 'center',
+                            justifyContent: 'flex-end',
                             gap: '4px',
+                            marginTop: '8px',
                         }}
                     >
                         <button
