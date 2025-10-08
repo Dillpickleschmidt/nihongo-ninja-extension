@@ -52,6 +52,13 @@ export interface YomitanTermEntry {
     termTags: string[];
     dictionary: string;
     styles?: string; // Dictionary-specific CSS styles
+    dictionaryMetadata?: {
+        title: string;
+        version: string;
+        author?: string;
+        url?: string;
+        description?: string;
+    };
 }
 
 // CSS Scoping Utilities (matching Yomitan's implementation exactly)
@@ -73,6 +80,21 @@ interface SubtitleTokenPopupProps {
     onLookupYomitan?: (term: string) => Promise<YomitanTermEntry[]>;
 }
 
+// Helper function to group entries by (expression, reading) pairs
+const groupByVocabularySense = (entries: YomitanTermEntry[]): YomitanTermEntry[][] => {
+    const groups = new Map<string, YomitanTermEntry[]>();
+
+    for (const entry of entries) {
+        const key = `${entry.expression}:${entry.reading}`;
+        if (!groups.has(key)) {
+            groups.set(key, []);
+        }
+        groups.get(key)!.push(entry);
+    }
+
+    return Array.from(groups.values());
+};
+
 const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
     open,
     anchorEl,
@@ -83,8 +105,9 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
 }) => {
     const theme = createTheme(themeType as 'dark' | 'light');
     const [yomitanData, setYomitanData] = useState<YomitanTermEntry[] | null>(null);
+    const [groupedEntries, setGroupedEntries] = useState<YomitanTermEntry[][]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [currentDictionaryIndex, setCurrentDictionaryIndex] = useState(0);
+    const [currentGroupIndex, setCurrentGroupIndex] = useState(0);
 
     // Set theme for CSS variable inheritance (matching Yomitan's ThemeController)
     useEffect(() => {
@@ -360,17 +383,22 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
         if (token) {
             setIsLoading(true);
             setYomitanData(null);
-            setCurrentDictionaryIndex(0);
+            setGroupedEntries([]);
+            setCurrentGroupIndex(0);
 
             // Yomitan lookup
             if (onLookupYomitan) {
                 onLookupYomitan(token.surface_form)
                     .then((yomitanResult) => {
                         setYomitanData(yomitanResult);
+                        // Group entries by (expression, reading)
+                        const groups = groupByVocabularySense(yomitanResult);
+                        setGroupedEntries(groups);
                     })
                     .catch((error) => {
                         console.error('Yomitan lookup failed:', error);
                         setYomitanData([]);
+                        setGroupedEntries([]);
                     })
                     .finally(() => {
                         setIsLoading(false);
@@ -378,6 +406,7 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
             } else {
                 setIsLoading(false);
                 setYomitanData([]);
+                setGroupedEntries([]);
             }
         }
     }, [token, onLookupYomitan]);
@@ -431,105 +460,147 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
         });
     };
 
-    const renderYomitanEntries = (entries: YomitanTermEntry[]) => {
-        if (!entries.length) return null;
+    // Create Yomitan-style dictionary tag with metadata tooltip
+    const createDictionaryTag = (entry: YomitanTermEntry) => {
+        const metadata = entry.dictionaryMetadata;
+        const tooltipLines: string[] = [];
 
-        const currentEntry = entries[currentDictionaryIndex] || entries[0];
-        const normalizedGlossary = normalizeGlossaryContent(currentEntry.glossary);
+        if (metadata) {
+            tooltipLines.push(metadata.title);
+            if (metadata.author) {
+                tooltipLines.push(`Author: ${metadata.author}`);
+            }
+            if (metadata.description) {
+                tooltipLines.push(`Description: ${metadata.description}`);
+            }
+            if (metadata.version) {
+                tooltipLines.push(`Version: ${metadata.version}`);
+            }
+        }
 
-        // Apply filtering to exclude deinflections
-        const definitions = GlossaryUtils.filterContent(normalizedGlossary);
+        const tooltip = tooltipLines.length > 0 ? tooltipLines.join('\n') : entry.dictionary;
 
-        // Generate scoped CSS for this dictionary (matching Yomitan's exact structure)
-        const dictionaryCss = currentEntry.styles || '';
-        const scopedCss = dictionaryCss ? addDictionaryScopeToCss(dictionaryCss, currentEntry.dictionary) : '';
+        return (
+            <span className="tag" data-category="dictionary" title={tooltip}>
+                <span className="tag-label">
+                    <span className="tag-label-content">{entry.dictionary}</span>
+                </span>
+            </span>
+        );
+    };
+
+    const renderYomitanEntries = (group: YomitanTermEntry[]) => {
+        if (!group.length) return null;
 
         return (
             <div className="yomitan-glossary">
-                {scopedCss && <style dangerouslySetInnerHTML={{ __html: scopedCss }} />}
-                <div data-dictionary={currentEntry.dictionary}>
-                    <div className="definition-list-container">
-                        <ul className="gloss-list">
-                            {definitions.map((meaning, meaningIndex) => (
-                                <li key={meaningIndex} className="gloss-item">
-                                    <span className="gloss-separator"></span>
-                                    <span className="gloss-content structured-content">
-                                        {renderStructuredContent(meaning)}
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
+                {/* Render each dictionary's entry in the group */}
+                {group.map((entry, entryIndex) => {
+                    const normalizedGlossary = normalizeGlossaryContent(entry.glossary);
+                    const definitions = GlossaryUtils.filterContent(normalizedGlossary);
 
-                    {currentEntry.termTags && currentEntry.termTags.length > 0 && (
-                        <div className="tag-list">
-                            {currentEntry.termTags.map((tag, i) => (
-                                <span key={i} className="tag">
-                                    {tag}
-                                </span>
-                            ))}
+                    // Generate scoped CSS for this dictionary
+                    const dictionaryCss = entry.styles || '';
+                    const scopedCss = dictionaryCss ? addDictionaryScopeToCss(dictionaryCss, entry.dictionary) : '';
+
+                    return (
+                        <div key={entryIndex} style={{ marginBottom: entryIndex < group.length - 1 ? '16px' : '0' }}>
+                            {scopedCss && <style dangerouslySetInnerHTML={{ __html: scopedCss }} />}
+                            <div data-dictionary={entry.dictionary}>
+                                {/* Dictionary tag */}
+                                <div className="tag-list" style={{ marginBottom: '8px' }}>
+                                    {createDictionaryTag(entry)}
+                                </div>
+
+                                {/* Definitions */}
+                                <div className="definition-list-container">
+                                    <ul className="gloss-list">
+                                        {definitions.map((meaning, meaningIndex) => (
+                                            <li key={meaningIndex} className="gloss-item">
+                                                <span className="gloss-separator"></span>
+                                                <span className="gloss-content structured-content">
+                                                    {renderStructuredContent(meaning)}
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                {/* Term tags */}
+                                {entry.termTags && entry.termTags.length > 0 && (
+                                    <div className="tag-list" style={{ marginTop: '8px' }}>
+                                        {entry.termTags
+                                            .split(' ')
+                                            .filter((tag) => tag.trim())
+                                            .map((tag, i) => (
+                                                <span key={i} className="tag">
+                                                    {tag}
+                                                </span>
+                                            ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    )}
+                    );
+                })}
 
-                    <div className="dictionary-name">{currentEntry.dictionary}</div>
-
-                    {entries.length > 1 && (
-                        <div
+                {/* Pagination controls */}
+                {groupedEntries.length > 1 && (
+                    <div
+                        style={{
+                            position: 'absolute',
+                            bottom: '8px',
+                            right: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                        }}
+                    >
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setCurrentGroupIndex(Math.max(0, currentGroupIndex - 1));
+                            }}
+                            disabled={currentGroupIndex === 0}
                             style={{
-                                position: 'absolute',
-                                bottom: '8px',
-                                right: '8px',
+                                border: 'none',
+                                background: 'transparent',
+                                cursor: currentGroupIndex === 0 ? 'default' : 'pointer',
+                                opacity: currentGroupIndex === 0 ? 0.3 : 1,
+                                padding: 0,
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '4px',
+                                color: 'inherit',
                             }}
+                            title="Previous group"
                         >
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setCurrentDictionaryIndex(Math.max(0, currentDictionaryIndex - 1));
-                                }}
-                                disabled={currentDictionaryIndex === 0}
-                                style={{
-                                    border: 'none',
-                                    background: 'transparent',
-                                    cursor: currentDictionaryIndex === 0 ? 'default' : 'pointer',
-                                    opacity: currentDictionaryIndex === 0 ? 0.3 : 1,
-                                    padding: 0,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    color: 'inherit',
-                                }}
-                                title="Previous entry"
-                            >
-                                <ChevronLeftRounded sx={{ fontSize: '1.5rem' }} />
-                            </button>
-                            <span style={{ fontSize: '0.9rem', color: '#666' }}>
-                                {currentDictionaryIndex + 1}/{entries.length}
-                            </span>
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setCurrentDictionaryIndex(Math.min(entries.length - 1, currentDictionaryIndex + 1));
-                                }}
-                                disabled={currentDictionaryIndex >= entries.length - 1}
-                                style={{
-                                    border: 'none',
-                                    background: 'transparent',
-                                    cursor: currentDictionaryIndex >= entries.length - 1 ? 'default' : 'pointer',
-                                    opacity: currentDictionaryIndex >= entries.length - 1 ? 0.3 : 1,
-                                    padding: 0,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    color: 'inherit',
-                                }}
-                                title="Next entry"
-                            >
-                                <ChevronRightRounded sx={{ fontSize: '1.5rem' }} />
-                            </button>
-                        </div>
-                    )}
-                </div>
+                            <ChevronLeftRounded sx={{ fontSize: '1.5rem' }} />
+                        </button>
+                        <span style={{ fontSize: '0.9rem', color: '#666' }}>
+                            {currentGroupIndex + 1}/{groupedEntries.length}
+                        </span>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setCurrentGroupIndex(Math.min(groupedEntries.length - 1, currentGroupIndex + 1));
+                            }}
+                            disabled={currentGroupIndex >= groupedEntries.length - 1}
+                            style={{
+                                border: 'none',
+                                background: 'transparent',
+                                cursor: currentGroupIndex >= groupedEntries.length - 1 ? 'default' : 'pointer',
+                                opacity: currentGroupIndex >= groupedEntries.length - 1 ? 0.3 : 1,
+                                padding: 0,
+                                display: 'flex',
+                                alignItems: 'center',
+                                color: 'inherit',
+                            }}
+                            title="Next group"
+                        >
+                            <ChevronRightRounded sx={{ fontSize: '1.5rem' }} />
+                        </button>
+                    </div>
+                )}
             </div>
         );
     };
@@ -588,17 +659,13 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
                         <div className="entry">
                             <div className="headword-list">
                                 <span className="headword-term">
-                                    {yomitanData &&
-                                    yomitanData.length > 0 &&
-                                    currentDictionaryIndex < yomitanData.length
-                                        ? yomitanData[currentDictionaryIndex].expression
+                                    {groupedEntries.length > 0 && currentGroupIndex < groupedEntries.length
+                                        ? groupedEntries[currentGroupIndex][0].expression
                                         : token.surface_form}
                                 </span>
                                 <span className="headword-reading">
-                                    {yomitanData &&
-                                    yomitanData.length > 0 &&
-                                    currentDictionaryIndex < yomitanData.length
-                                        ? yomitanData[currentDictionaryIndex].reading
+                                    {groupedEntries.length > 0 && currentGroupIndex < groupedEntries.length
+                                        ? groupedEntries[currentGroupIndex][0].reading
                                         : token.pronunciation}
                                 </span>
                             </div>
@@ -617,8 +684,8 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
                                 </div>
                             )}
 
-                            {yomitanData && yomitanData.length > 0 ? (
-                                renderYomitanEntries(yomitanData)
+                            {groupedEntries.length > 0 && currentGroupIndex < groupedEntries.length ? (
+                                renderYomitanEntries(groupedEntries[currentGroupIndex])
                             ) : !isLoading ? (
                                 <div
                                     style={{

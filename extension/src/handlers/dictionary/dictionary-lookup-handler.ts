@@ -45,23 +45,27 @@ export default class DictionaryLookupHandler implements CommandHandler {
         return true; // Indicates we will call sendResponse asynchronously
     }
 
-
     private async performLookupWithStyles(term: string): Promise<any[]> {
         try {
             const service = await this.getDictionaryService();
 
-            // Get both lookup results and dictionary styles
-            const [results, stylesMap] = await Promise.all([
+            // Get lookup results, dictionary styles, and dictionary metadata
+            const [results, stylesMap, dictionaries] = await Promise.all([
                 service.lookupTerms([term]),
-                service.getDictionaryStylesMap()
+                service.getDictionaryStylesMap(),
+                service.getDictionaries(),
             ]);
 
             const entries = results.get(term) || [];
 
-            // Map entries and include dictionary styles
+            // Create a map for quick dictionary info lookup
+            const dictionaryInfoMap = new Map(dictionaries.map((dict) => [dict.title, dict]));
+
+            // Map entries and include dictionary styles and metadata
             const mappedEntries = entries.map((entry) => {
                 const dictionaryName = entry.dictionary || '';
                 const styles = stylesMap.get(dictionaryName) || '';
+                const dictionaryInfo = dictionaryInfoMap.get(dictionaryName);
 
                 // Yomitan returns 'term' from database 'expression' field
                 // and 'definitions' from database 'glossary' field
@@ -75,11 +79,18 @@ export default class DictionaryLookupHandler implements CommandHandler {
                     score: entry.score || 0,
                     glossary: entry.definitions || entry.glossary || [],
                     sequence: entry.sequence || 0,
-                    termTags: Array.isArray(entry.termTags)
-                        ? entry.termTags.join(' ')
-                        : String(entry.termTags || ''),
+                    termTags: Array.isArray(entry.termTags) ? entry.termTags.join(' ') : String(entry.termTags || ''),
                     dictionary: dictionaryName,
                     styles: styles, // Include dictionary CSS
+                    dictionaryMetadata: dictionaryInfo
+                        ? {
+                              title: dictionaryInfo.title,
+                              version: dictionaryInfo.version,
+                              author: dictionaryInfo.author,
+                              url: dictionaryInfo.url,
+                              description: dictionaryInfo.description,
+                          }
+                        : undefined,
                 };
             });
 
@@ -90,4 +101,3 @@ export default class DictionaryLookupHandler implements CommandHandler {
         }
     }
 }
-
