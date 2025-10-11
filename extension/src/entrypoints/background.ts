@@ -66,6 +66,7 @@ import {
     DictionaryImportHandler,
     DictionaryDownloadImportHandler,
 } from '@/handlers/dictionary/dictionary-import-handlers';
+import PageConfigHandler from '@/handlers/asbplayerv2/page-config-handler';
 
 export default defineBackground(() => {
     if (!isFirefoxBuild) {
@@ -172,6 +173,7 @@ export default defineBackground(() => {
         new SettingsUpdatedHandler(tabRegistry, settings),
         new OpenExtensionShortcutsHandler(),
         new ExtensionCommandsHandler(),
+        new PageConfigHandler(),
         new AsbplayerV2ToVideoCommandForwardingHandler(),
         new CaptureVisibleTabHandler(),
         new RequestModelHandler(),
