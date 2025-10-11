@@ -68,7 +68,7 @@ import SubtitleController, { SubtitleModelWithIndex } from '../controllers/subti
 import VideoDataSyncController from '../controllers/video-data-sync-controller';
 import AudioRecorder, { TimedRecordingInProgressError } from './audio-recorder';
 import { isMobile } from '@project/common/device-detection/mobile';
-import { OffsetAnchor } from './element-overlay';
+import { OffsetAnchor, CachingElementOverlay } from './element-overlay';
 import { ExtensionSettingsStorage } from './extension-settings-storage';
 import { i18nInit } from './i18n';
 import KeyBindings from './key-bindings';
@@ -1578,13 +1578,34 @@ export default class Binding {
                         }
                     });
 
+                    // Build HTML only for Japanese subtitles that got tokens
+                    const htmlsToUpdate = (this.subtitleController as any)._buildSubtitlesHtml(japaneseSubtitles);
+
+                    // Update cache entries selectively (much faster than full regeneration)
+                    const bottomOverlay = (this.subtitleController as any).bottomSubtitlesElementOverlay;
+                    const topOverlay = (this.subtitleController as any).topSubtitlesElementOverlay;
+
+                    if (
+                        (this.subtitleController as any).shouldRenderBottomOverlay &&
+                        bottomOverlay instanceof CachingElementOverlay
+                    ) {
+                        htmlsToUpdate.forEach((html: any) => {
+                            bottomOverlay.cacheHtml(html.key, html.html());
+                        });
+                    }
+                    if (
+                        (this.subtitleController as any).shouldRenderTopOverlay &&
+                        topOverlay instanceof CachingElementOverlay
+                    ) {
+                        htmlsToUpdate.forEach((html: any) => {
+                            topOverlay.cacheHtml(html.key, html.html());
+                        });
+                    }
+
                     // Refresh currently displayed subtitles to show tokens immediately
-                    // Note: cacheHtml() processes in chunks to avoid UI freeze
-                    this.subtitleController.cacheHtml().then(() => {
-                        this.subtitleController.forceRerender();
-                        this.subtitleController.refresh();
-                        console.log('[Binding] Batch kagome analysis complete');
-                    });
+                    this.subtitleController.forceRerender();
+                    this.subtitleController.refresh();
+                    console.log('[Binding] Batch kagome analysis complete');
                 }
             })
             .catch((error) => {
