@@ -171,7 +171,7 @@ export default defineConfig({
 
             manifest = {
                 ...manifest,
-                host_permissions: ['<all_urls>'],
+                host_permissions: ['<all_urls>', 'https://github.com/stephenmk/stephenmk.github.io/*'],
                 commands,
                 browser_specific_settings: {
                     gecko: {
@@ -187,7 +187,7 @@ export default defineConfig({
 
             manifest = {
                 ...manifest,
-                host_permissions: ['<all_urls>'],
+                host_permissions: ['<all_urls>', 'https://github.com/stephenmk/stephenmk.github.io/*'],
                 browser_specific_settings: {
                     gecko: {
                         id: '{49de9206-c73e-4829-be4d-bda770d7f4b5}',

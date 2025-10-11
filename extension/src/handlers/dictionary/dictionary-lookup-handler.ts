@@ -1,6 +1,6 @@
 import { Command, Message } from '@project/common';
 import { CommandHandler } from '../command-handler';
-import { YomitanDictionaryService } from '../../services/yomitan-dictionary-service';
+import { YomitanDictionaryService, DictionaryInfo } from '../../services/yomitan-dictionary-service';
 
 interface DictionaryLookupMessage extends Message {
     command: 'dictionary-lookup';
@@ -17,6 +17,8 @@ export default class DictionaryLookupHandler implements CommandHandler {
     }
 
     private dictionaryService: YomitanDictionaryService | null = null;
+    private cachedStylesMap: Map<string, string> | null = null;
+    private cachedDictionaries: DictionaryInfo[] | null = null;
 
     private async getDictionaryService(): Promise<YomitanDictionaryService> {
         if (!this.dictionaryService) {
@@ -49,14 +51,20 @@ export default class DictionaryLookupHandler implements CommandHandler {
         try {
             const service = await this.getDictionaryService();
 
-            // Get lookup results, dictionary styles, and dictionary metadata
-            const [results, stylesMap, dictionaries] = await Promise.all([
-                service.lookupTerms([term]),
-                service.getDictionaryStylesMap(),
-                service.getDictionaries(),
-            ]);
+            // Cache dictionary metadata on first lookup
+            if (!this.cachedStylesMap || !this.cachedDictionaries) {
+                [this.cachedStylesMap, this.cachedDictionaries] = await Promise.all([
+                    service.getDictionaryStylesMap(),
+                    service.getDictionaries(),
+                ]);
+            }
+
+            // Only fetch the term (the dynamic part)
+            const results = await service.lookupTerms([term]);
 
             const entries = results.get(term) || [];
+            const stylesMap = this.cachedStylesMap;
+            const dictionaries = this.cachedDictionaries;
 
             // Create a map for quick dictionary info lookup
             const dictionaryInfoMap = new Map(dictionaries.map((dict) => [dict.title, dict]));

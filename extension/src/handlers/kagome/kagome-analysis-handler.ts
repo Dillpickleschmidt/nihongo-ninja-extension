@@ -617,7 +617,7 @@ class Go {
     }
 }
 
-async function loadKagomeWasm() {
+export async function loadKagomeWasm() {
     if (kagomeLoaded) return;
 
     if (loadPromise) {
