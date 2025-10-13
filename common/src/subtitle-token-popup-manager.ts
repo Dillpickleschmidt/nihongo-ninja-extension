@@ -115,7 +115,7 @@ export class SubtitleTokenPopupManager {
             const token = tokens[tokenIndex];
 
             // Skip tokens with part of speech starting with "記号" (symbols)
-            if (token.pos.startsWith('記号')) {
+            if (token.pos[0] === '記号') {
                 return;
             }
 

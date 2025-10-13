@@ -24,6 +24,7 @@ import {
     OffsetAnchor,
 } from '../services/element-overlay';
 import { SubtitleTokenPopupManager } from '@project/common/src/subtitle-token-popup-manager';
+import { selectAndLayerGrammarPatterns, buildGrammarEnhancedHTML } from '@project/common/src/grammar-pattern-renderer';
 
 // Global token map for popup lookup (avoids JSON.stringify in HTML)
 declare global {
@@ -120,6 +121,36 @@ export default class SubtitleController {
         // Initialize popup manager
         this.popupManager = new SubtitleTokenPopupManager();
         this.popupManager.initialize();
+
+        // Set up global event delegation for grammar pattern hover highlighting
+        document.addEventListener(
+            'mouseover',
+            (e) => {
+                const target = e.target as HTMLElement;
+                if (target.classList.contains('grammar-underline')) {
+                    const pattern = target.dataset.pattern;
+                    if (pattern) {
+                        document
+                            .querySelectorAll(`.grammar-underline[data-pattern="${pattern}"]`)
+                            .forEach((el) => el.classList.add('pattern-hover'));
+                    }
+                }
+            },
+            true
+        );
+
+        document.addEventListener(
+            'mouseout',
+            (e) => {
+                const target = e.target as HTMLElement;
+                if (target.classList.contains('grammar-underline')) {
+                    document
+                        .querySelectorAll('.grammar-underline.pattern-hover')
+                        .forEach((el) => el.classList.remove('pattern-hover'));
+                }
+            },
+            true
+        );
     }
 
     get subtitles() {
@@ -505,23 +536,20 @@ export default class SubtitleController {
     }
 
     private _buildSubtitleTextHtml(subtitle: SubtitleModelWithIndex) {
-        const { text, track, kagomeTokens } = subtitle;
+        const { text, track, kagomeTokens, grammarMatches } = subtitle;
 
-        // If we have kagome tokens, render each token with indices for lookup
+        // If we have kagome tokens, build grammar-enhanced HTML
         if (kagomeTokens && kagomeTokens.length > 0) {
             // Store tokens for this subtitle in global map (initialized in constructor)
             window.kagomeTokensBySubtitle!.set(subtitle.index, kagomeTokens);
 
-            const tokenHtml = kagomeTokens
-                .filter((token) => token && token.surface_form)
-                .map((token, index) => {
-                    // Use indices instead of JSON.stringify for ~30% faster HTML building
-                    // Don't add interactive styling to symbols/punctuation
-                    const className = token.pos.startsWith('記号') ? '' : 'asbplayer-kagome-token';
-                    return `<span class="${className}" data-subtitle-index="${subtitle.index}" data-token-index="${index}">${token.surface_form}</span>`;
-                })
-                .join('');
-            return this._buildTextHtml(tokenHtml, track);
+            // Select and layer grammar patterns
+            const layeredPatterns = grammarMatches ? selectAndLayerGrammarPatterns(grammarMatches) : [];
+
+            // Build HTML with interleaved token and grammar spans
+            const enhancedHtml = buildGrammarEnhancedHTML(text, kagomeTokens, layeredPatterns, subtitle.index);
+
+            return this._buildTextHtml(enhancedHtml, track);
         }
 
         // Fallback to normal rendering

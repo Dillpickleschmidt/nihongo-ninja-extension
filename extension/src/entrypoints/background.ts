@@ -61,6 +61,7 @@ import DeleteCopyHistoryHandler from '@/handlers/asbplayerv2/delete-copy-history
 import ClearCopyHistoryHandler from '@/handlers/asbplayerv2/clear-copy-history-handler';
 import SaveCopyHistoryHandler from '@/handlers/asbplayerv2/save-copy-history-handler';
 import KagomeAnalysisHandler, { loadKagomeWasm } from '@/handlers/kagome/kagome-analysis-handler';
+import { loadGrammarWasm } from '@/handlers/grammar/grammar-analysis-handler';
 import DictionaryLookupHandler from '@/handlers/dictionary/dictionary-lookup-handler';
 import {
     DictionaryImportHandler,
@@ -111,6 +112,15 @@ export default defineBackground(() => {
             console.log('[Extension Install] Kagome WASM cached successfully');
         } catch (error) {
             console.error('[Extension Install] Failed to preload Kagome WASM:', error);
+            // Non-fatal - will load on first use instead
+        }
+
+        console.log('[Extension Install] Preloading Grammar WASM...');
+        try {
+            await loadGrammarWasm();
+            console.log('[Extension Install] Grammar WASM cached successfully');
+        } catch (error) {
+            console.error('[Extension Install] Failed to preload Grammar WASM:', error);
             // Non-fatal - will load on first use instead
         }
     };

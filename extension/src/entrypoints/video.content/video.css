@@ -196,11 +196,12 @@
 /* Kagome token debug borders */
 .asbplayer-kagome-token {
     /* border: 1px solid red !important; */
+    position: relative !important;
     display: inline-block !important;
     /* margin: 0 1px !important; */
     transition: all 0.1s ease !important;
     cursor: pointer !important;
-    border-radius: 4px !important;
+    /* border-radius: 4px !important; */
 }
 
 .asbplayer-kagome-token:hover {
@@ -212,6 +213,57 @@
     color: #a78bfa !important; /* Tailwind violet-400 */
 }
 
+/* Don't apply hover color when hovering grammar underline child */
+.asbplayer-kagome-token:has(.grammar-underline:hover) {
+    color: inherit !important;
+}
+
 .asbplayer-kagome-token.asbplayer-kagome-token-active {
     color: #a78bfa !important; /* Tailwind violet-400 - same as hover */
+}
+
+/* Don't apply active color when grammar underline is being interacted with */
+.asbplayer-kagome-token.asbplayer-kagome-token-active:has(.grammar-underline:active) {
+    color: inherit !important;
+}
+
+/* Grammar pattern underlines - absolutely positioned divs */
+.grammar-underline {
+    position: absolute !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 8px !important;
+    cursor: help !important;
+    display: flex !important;
+    align-items: center !important;
+    pointer-events: auto !important;
+}
+
+.grammar-underline::after {
+    content: '' !important;
+    width: 100% !important;
+    height: 2px !important;
+    background: #ffd700 !important; /* Yellow underline */
+}
+
+.grammar-underline.pattern-hover::after {
+    background: #ffed4e !important; /* Lighter yellow when pattern is hovered */
+    height: 4px !important; /* Thicker on hover */
+}
+
+/* Layer positioning - 8px spacing for 8px tall clickable areas */
+.grammar-layer-0 {
+    bottom: -8px !important;
+}
+
+.grammar-layer-1 {
+    bottom: -16px !important;
+}
+
+.grammar-layer-2 {
+    bottom: -24px !important;
+}
+
+.grammar-layer-3 {
+    bottom: -32px !important;
 }

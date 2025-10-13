@@ -90,6 +90,7 @@ export default defineConfig({
                         'notification-ui.js',
                         'mobile-video-overlay-ui.html',
                         'kagome/*',
+                        'grammar/*',
                         'yomitan/fonts/*',
                         'yomitan/images/*',
                         'page-favicons/*',

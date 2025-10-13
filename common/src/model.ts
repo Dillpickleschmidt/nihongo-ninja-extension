@@ -21,16 +21,27 @@ export interface SubtitleTextImage {
 }
 
 export interface KagomeToken {
-    readonly word_id: number;
-    readonly word_position: number;
-    readonly surface_form: string;
-    readonly word_type: string;
-    readonly pos: string;
+    readonly id: number;
+    readonly start: number;
+    readonly end: number;
+    readonly surface: string;
+    readonly class: string;
+    readonly pos: string[];
     readonly base_form: string;
     readonly reading: string;
     readonly pronunciation: string;
+    readonly features: string[];
     readonly jotobaWords?: import('./jotoba-api').JotobaWord[];
     readonly jotobaNames?: import('./jotoba-api').JotobaName[];
+}
+
+export interface GrammarMatch {
+    readonly pattern_name: string;
+    readonly confidence: number;
+    readonly start_char: number;
+    readonly end_char: number;
+    readonly category: 'Construction' | 'Conjugation';
+    readonly conjugation_pattern: string;
 }
 
 export interface SubtitleModel {
@@ -42,6 +53,7 @@ export interface SubtitleModel {
     readonly originalEnd: number;
     readonly track: number;
     readonly kagomeTokens?: KagomeToken[];
+    readonly grammarMatches?: GrammarMatch[];
 }
 
 export interface CardTextFieldValues {

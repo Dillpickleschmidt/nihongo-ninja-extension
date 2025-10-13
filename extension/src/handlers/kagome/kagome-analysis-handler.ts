@@ -7,6 +7,7 @@ interface KagomeAnalysisMessage extends Message {
 
 declare global {
     function kagome_tokenize(text: string): any[];
+    function kagome_tokenize_batch(texts: string[]): any[][];
 
     // Go WASM runtime types for service worker compatibility
     interface NodeJSError extends Error {
@@ -708,15 +709,13 @@ export default class KagomeAnalysisHandler {
         // Load WASM once for the batch
         await loadKagomeWasm();
 
-        // Process in chunks of 1000 (proven optimal batch size from japanese-subtitle-search)
-        const BATCH_SIZE = 1000;
-        const allTokenArrays: any[][] = [];
-
-        for (let i = 0; i < japaneseTexts.length; i += BATCH_SIZE) {
-            const chunk = japaneseTexts.slice(i, Math.min(i + BATCH_SIZE, japaneseTexts.length));
-            const chunkTokens = await this.processBatchChunk(chunk);
-            allTokenArrays.push(...chunkTokens);
+        // Check function availability
+        if (typeof self.kagome_tokenize_batch !== 'function') {
+            throw new Error('kagome_tokenize_batch function not available');
         }
+
+        // Single call to WASM - Go handles all texts efficiently
+        const allTokenArrays = self.kagome_tokenize_batch(japaneseTexts);
 
         // Map results back to original positions (including non-Japanese texts)
         const results: any[][] = new Array(texts.length).fill(null).map(() => []);
@@ -725,43 +724,6 @@ export default class KagomeAnalysisHandler {
         });
 
         return results;
-    }
-
-    private async processBatchChunk(texts: string[]): Promise<any[][]> {
-        // Concatenate all texts with Unicode Unit Separator (U+001F)
-        // This control character is designed as a record separator and never appears in subtitle text
-        const SEPARATOR = '\x1F';
-        const combinedText = texts.join(SEPARATOR);
-
-        // Call Kagome once with concatenated text
-        if (typeof self.kagome_tokenize !== 'function') {
-            throw new Error('kagome_tokenize function not available');
-        }
-
-        const allTokens = self.kagome_tokenize(combinedText);
-
-        // Map tokens back to their original texts using delimiter-based approach
-        // Each separator token marks the boundary between texts
-        const tokenArrays: any[][] = [];
-        let currentTokens: any[] = [];
-
-        for (const token of allTokens) {
-            if (token.surface_form === SEPARATOR) {
-                // Separator marks end of current text
-                tokenArrays.push(currentTokens);
-                currentTokens = [];
-            } else {
-                // Add token to current text
-                currentTokens.push(token);
-            }
-        }
-
-        // Don't forget the last text (no trailing separator)
-        if (currentTokens.length > 0 || tokenArrays.length < texts.length) {
-            tokenArrays.push(currentTokens);
-        }
-
-        return tokenArrays;
     }
 
     private async analyzeText(text: string): Promise<any[]> {
