@@ -24,7 +24,11 @@ import {
     OffsetAnchor,
 } from '../services/element-overlay';
 import { SubtitleTokenPopupManager } from '@project/common/src/subtitle-token-popup-manager';
-import { selectAndLayerGrammarPatterns, buildGrammarEnhancedHTML } from '@project/common/src/grammar-pattern-renderer';
+import {
+    selectAndLayerGrammarPatterns,
+    buildGrammarEnhancedHTML,
+    combineConjugationTokens,
+} from '@project/common/src/grammar-pattern-renderer';
 
 // Global token map for popup lookup (avoids JSON.stringify in HTML)
 declare global {
@@ -128,10 +132,10 @@ export default class SubtitleController {
             (e) => {
                 const target = e.target as HTMLElement;
                 if (target.classList.contains('grammar-underline')) {
-                    const pattern = target.dataset.pattern;
-                    if (pattern) {
+                    const patternId = target.dataset.patternId;
+                    if (patternId) {
                         document
-                            .querySelectorAll(`.grammar-underline[data-pattern="${pattern}"]`)
+                            .querySelectorAll(`.grammar-underline[data-pattern-id="${patternId}"]`)
                             .forEach((el) => el.classList.add('pattern-hover'));
                     }
                 }
@@ -540,14 +544,21 @@ export default class SubtitleController {
 
         // If we have kagome tokens, build grammar-enhanced HTML
         if (kagomeTokens && kagomeTokens.length > 0) {
-            // Store tokens for this subtitle in global map (initialized in constructor)
-            window.kagomeTokensBySubtitle!.set(subtitle.index, kagomeTokens);
+            // Combine tokens that are part of conjugation patterns
+            const combinedTokens = grammarMatches
+                ? combineConjugationTokens(text, kagomeTokens, grammarMatches)
+                : kagomeTokens;
+
+            // Store combined tokens for this subtitle in global map (initialized in constructor)
+            window.kagomeTokensBySubtitle!.set(subtitle.index, combinedTokens);
 
             // Select and layer grammar patterns
-            const layeredPatterns = grammarMatches ? selectAndLayerGrammarPatterns(grammarMatches) : [];
+            const layeredPatterns = grammarMatches
+                ? selectAndLayerGrammarPatterns(grammarMatches, combinedTokens, subtitle.index)
+                : [];
 
             // Build HTML with interleaved token and grammar spans
-            const enhancedHtml = buildGrammarEnhancedHTML(text, kagomeTokens, layeredPatterns, subtitle.index);
+            const enhancedHtml = buildGrammarEnhancedHTML(text, combinedTokens, layeredPatterns, subtitle.index);
 
             return this._buildTextHtml(enhancedHtml, track);
         }

@@ -31,8 +31,6 @@ export interface KagomeToken {
     readonly reading: string;
     readonly pronunciation: string;
     readonly features: string[];
-    readonly jotobaWords?: import('./jotoba-api').JotobaWord[];
-    readonly jotobaNames?: import('./jotoba-api').JotobaName[];
 }
 
 export interface GrammarMatch {

@@ -237,6 +237,7 @@
     display: flex !important;
     align-items: center !important;
     pointer-events: auto !important;
+    z-index: 1 !important;
 }
 
 .grammar-underline::after {

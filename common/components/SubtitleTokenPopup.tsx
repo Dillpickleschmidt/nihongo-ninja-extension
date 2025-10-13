@@ -388,7 +388,7 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
 
             // Yomitan lookup
             if (onLookupYomitan) {
-                onLookupYomitan(token.surface)
+                onLookupYomitan(token.base_form)
                     .then((yomitanResult) => {
                         setYomitanData(yomitanResult);
                         // Group entries by (expression, reading)
@@ -663,7 +663,7 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
                                 <span className="headword-term">
                                     {groupedEntries.length > 0 && currentGroupIndex < groupedEntries.length
                                         ? groupedEntries[currentGroupIndex][0].expression
-                                        : token.surface}
+                                        : token.base_form}
                                 </span>
                                 <span className="headword-reading">
                                     {groupedEntries.length > 0 && currentGroupIndex < groupedEntries.length
