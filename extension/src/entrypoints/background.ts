@@ -60,8 +60,8 @@ import RequestCopyHistoryHandler from '@/handlers/asbplayerv2/request-copy-histo
 import DeleteCopyHistoryHandler from '@/handlers/asbplayerv2/delete-copy-history-handler';
 import ClearCopyHistoryHandler from '@/handlers/asbplayerv2/clear-copy-history-handler';
 import SaveCopyHistoryHandler from '@/handlers/asbplayerv2/save-copy-history-handler';
-import KagomeAnalysisHandler, { loadKagomeWasm } from '@/handlers/kagome/kagome-analysis-handler';
-import { loadGrammarWasm } from '@/handlers/grammar/grammar-analysis-handler';
+import { loadKagomeWasm } from '@/handlers/kagome/kagome-analysis-handler';
+import { loadGrammarWasm, analyze_batch } from '@/handlers/grammar/grammar-analysis-handler';
 import DictionaryLookupHandler from '@/handlers/dictionary/dictionary-lookup-handler';
 import {
     DictionaryImportHandler,
@@ -145,6 +145,96 @@ export default defineBackground(() => {
     const imageCapturer = new ImageCapturer(settings);
     const cardPublisher = new CardPublisher(settings);
 
+    // Combined Japanese Analysis Handler (Kagome + Grammar)
+    interface JapaneseAnalysisMessage extends Message {
+        readonly command: 'japanese-analysis';
+        readonly texts: string[];
+    }
+
+    class JapaneseAnalysisHandler {
+        get sender() {
+            return 'asbplayer-video';
+        }
+
+        get command() {
+            return 'japanese-analysis';
+        }
+
+        handle(
+            command: Command<Message>,
+            sender: any,
+            sendResponse: (response: any) => void
+        ): boolean {
+            const message = command.message as JapaneseAnalysisMessage;
+
+            console.log('[Japanese Analysis] Analyzing', message.texts.length, 'texts');
+
+            this.analyzeBatch(message.texts)
+                .then((results) => {
+                    const response = {
+                        results: results.map((result, index) => ({
+                            text: message.texts[index],
+                            ...result,
+                        })),
+                    };
+                    console.log('[Japanese Analysis] Analysis complete:', results.length, 'results');
+                    sendResponse(response);
+                })
+                .catch((error) => {
+                    console.error('[Japanese Analysis] Analysis failed:', error);
+                    sendResponse({ results: [] });
+                });
+
+            return true;
+        }
+
+        private async analyzeBatch(texts: string[]): Promise<Array<{ tokens: any[]; grammarMatches: any[] }>> {
+            // Filter to only Japanese texts
+            const japaneseIndices: number[] = [];
+            const japaneseTexts: string[] = [];
+
+            texts.forEach((text, index) => {
+                if (/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text)) {
+                    japaneseIndices.push(index);
+                    japaneseTexts.push(text);
+                }
+            });
+
+            // If no Japanese texts, return empty results
+            if (japaneseTexts.length === 0) {
+                return texts.map(() => ({ tokens: [], grammarMatches: [] }));
+            }
+
+            // Load Kagome WASM and tokenize
+            await loadKagomeWasm();
+
+            if (typeof (self as any).kagome_tokenize_batch !== 'function') {
+                throw new Error('kagome_tokenize_batch function not available');
+            }
+
+            const allTokenArrays = (self as any).kagome_tokenize_batch(japaneseTexts);
+
+            // Load Grammar WASM and analyze
+            await loadGrammarWasm();
+            const grammarResults = analyze_batch(allTokenArrays);
+
+            // Map results back to original positions
+            const results: Array<{ tokens: any[]; grammarMatches: any[] }> = texts.map(() => ({
+                tokens: [],
+                grammarMatches: [],
+            }));
+
+            japaneseIndices.forEach((originalIndex, japaneseIndex) => {
+                results[originalIndex] = {
+                    tokens: allTokenArrays[japaneseIndex] || [],
+                    grammarMatches: grammarResults[japaneseIndex] || [],
+                };
+            });
+
+            return results;
+        }
+    }
+
     const handlers: CommandHandler[] = [
         new VideoHeartbeatHandler(tabRegistry),
         new RecordMediaHandler(audioRecorder, imageCapturer, cardPublisher, settings),
@@ -172,7 +262,7 @@ export default defineBackground(() => {
         new AudioBase64Handler(audioRecorder),
         new UpdateMobileOverlayModelHandler(),
         new RefreshSettingsHandler(tabRegistry, settings),
-        new KagomeAnalysisHandler(),
+        new JapaneseAnalysisHandler(),
         new DictionaryLookupHandler(),
         new DictionaryImportHandler(),
         new DictionaryDownloadImportHandler(),

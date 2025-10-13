@@ -76,7 +76,6 @@ import { shouldShowUpdateAlert } from './update-alert';
 import { mp3WorkerFactory } from './mp3-worker-factory';
 import { bufferToBase64 } from '@project/common/base64';
 import { pgsParserWorkerFactory } from './pgs-parser-worker-factory';
-import { loadGrammarWasm, analyze_batch } from '../handlers/grammar/grammar-analysis-handler';
 
 let netflix = false;
 document.addEventListener('asbplayer-netflix-enabled', (e) => {
@@ -1557,11 +1556,11 @@ export default class Binding {
             (s) => s.text && /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(s.text)
         );
 
-        // Create batch command with all texts
+        // Create batch command with all texts for combined Japanese analysis
         const command = {
             sender: 'asbplayer-video',
             message: {
-                command: 'kagome-analysis',
+                command: 'japanese-analysis',
                 texts: japaneseSubtitles.map((s) => s.text),
             },
             src: this.video.src,
@@ -1571,31 +1570,17 @@ export default class Binding {
             const response = await browser.runtime.sendMessage(command);
 
             if (response && response.results) {
-                // Update all subtitles with their tokens
+                // Update all subtitles with tokens and grammar matches
                 response.results.forEach((result: any, index: number) => {
                     if (result.tokens) {
                         (japaneseSubtitles[index] as any).kagomeTokens = result.tokens;
                     }
+                    if (result.grammarMatches) {
+                        (japaneseSubtitles[index] as any).grammarMatches = result.grammarMatches;
+                    }
                 });
 
-                // Run grammar analysis on all subtitles with tokens
-                try {
-                    await loadGrammarWasm();
-
-                    // Extract token arrays for grammar analysis
-                    const tokenArrays = response.results.map((r: any) => r.tokens || []);
-
-                    const grammarMatches = analyze_batch(tokenArrays);
-
-                    // Attach grammar matches to subtitles
-                    grammarMatches.forEach((matches: any, index: number) => {
-                        (japaneseSubtitles[index] as any).grammarMatches = matches;
-                    });
-                } catch (error: any) {
-                    console.warn('[Binding] Grammar analysis failed:', error);
-                }
-
-                // Build HTML only for Japanese subtitles that got tokens (AFTER grammar analysis)
+                // Build HTML for Japanese subtitles
                 const htmlsToUpdate = (this.subtitleController as any)._buildSubtitlesHtml(japaneseSubtitles);
 
                 // Update cache entries selectively (much faster than full regeneration)
