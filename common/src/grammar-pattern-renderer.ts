@@ -202,12 +202,19 @@ export function selectAndLayerGrammarPatterns(matches: GrammarMatch[], tokens: K
         return [];
     }
 
+    // Filter to Construction patterns only (Conjugation patterns are used only for token combining)
+    const constructionMatches = matches.filter((m) => m.category === 'Construction');
+
+    if (constructionMatches.length === 0) {
+        return [];
+    }
+
     // Build pattern-token overlap index
-    const { patternToTokens } = buildPatternTokenIndex(matches, tokens);
+    const { patternToTokens } = buildPatternTokenIndex(constructionMatches, tokens);
 
     // Filter patterns: remove those whose token-set is completely contained in a higher-confidence pattern
     const selectedPatterns: GrammarMatch[] = [];
-    const sortedByConfidence = [...matches]
+    const sortedByConfidence = [...constructionMatches]
         .map((m, idx) => ({ pattern: m, originalIdx: idx }))
         .sort((a, b) => b.pattern.confidence - a.pattern.confidence);
 
@@ -216,7 +223,7 @@ export function selectAndLayerGrammarPatterns(matches: GrammarMatch[], tokens: K
 
         // Check if this pattern's token-set is contained in any higher-confidence selected pattern
         const isRedundant = selectedPatterns.some((selected) => {
-            const selectedIdx = matches.indexOf(selected);
+            const selectedIdx = constructionMatches.indexOf(selected);
             const selectedTokens = patternToTokens.get(selectedIdx)!;
 
             // Check if patternTokens ⊆ selectedTokens
