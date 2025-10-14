@@ -245,11 +245,21 @@
     width: 100% !important;
     height: 2px !important;
     background: #ffd700 !important; /* Yellow underline */
+    opacity: 0 !important; /* Hidden by default */
 }
 
-.grammar-underline.pattern-hover::after {
-    background: #ffed4e !important; /* Lighter yellow when pattern is hovered */
+/* Show all underlines when hovering subtitle area OR popup is open */
+.asbplayer-subtitles:hover .grammar-underline::after,
+.asbplayer-subtitles.popup-open .grammar-underline::after {
+    opacity: 0.6 !important;
+    transition: opacity 0.1s ease !important;
+}
+
+.asbplayer-subtitles .grammar-underline.pattern-hover::after {
+    /* Lighter yellow when pattern is hovered */
+    /* background: #ffed4e !important;  */
     height: 4px !important; /* Thicker on hover */
+    opacity: 1 !important;
 }
 
 /* Layer positioning - 8px spacing for 8px tall clickable areas */

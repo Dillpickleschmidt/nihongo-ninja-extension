@@ -23,6 +23,7 @@ export class SubtitleTokenPopupManager {
     private shiftPressed: boolean = false;
     private clearTokenTimeout: number | null = null;
     private settings: SettingsProvider;
+    private subtitleContainer: HTMLElement | null = null;
 
     constructor() {
         this.settings = new SettingsProvider(new ExtensionSettingsStorage());
@@ -143,9 +144,20 @@ export class SubtitleTokenPopupManager {
             this.anchorEl.classList.remove('asbplayer-kagome-token-active');
         }
 
+        // Remove popup-open class from previous subtitle container
+        if (this.subtitleContainer) {
+            this.subtitleContainer.classList.remove('popup-open');
+        }
+
         // Set new active element and add active class
         this.anchorEl = anchorEl;
         this.anchorEl.classList.add('asbplayer-kagome-token-active');
+
+        // Find and mark subtitle container to keep underlines visible
+        this.subtitleContainer = anchorEl.closest('.asbplayer-subtitles');
+        if (this.subtitleContainer) {
+            this.subtitleContainer.classList.add('popup-open');
+        }
 
         this.token = token;
         this.isOpen = true;
@@ -156,6 +168,12 @@ export class SubtitleTokenPopupManager {
         // Remove active class when closing popup
         if (this.anchorEl) {
             this.anchorEl.classList.remove('asbplayer-kagome-token-active');
+        }
+
+        // Remove popup-open class from subtitle container
+        if (this.subtitleContainer) {
+            this.subtitleContainer.classList.remove('popup-open');
+            this.subtitleContainer = null;
         }
 
         this.isOpen = false;
@@ -221,6 +239,12 @@ export class SubtitleTokenPopupManager {
         // Clean up active class
         if (this.anchorEl) {
             this.anchorEl.classList.remove('asbplayer-kagome-token-active');
+        }
+
+        // Clean up popup-open class
+        if (this.subtitleContainer) {
+            this.subtitleContainer.classList.remove('popup-open');
+            this.subtitleContainer = null;
         }
 
         // Clean up any pending timeout
