@@ -307,7 +307,7 @@
     "activeTabPermissionRequest": {
         "title": "Aktywuj nagrywanie audio",
         "grantedTitle": "Nagrywanie audio aktywowane",
-        "prompt": "Wciśnij przycisk asbplayer w prawym górnym rogu przeglądarki, aby aktywować nagrywanie audio dla tej karty.",
+        "prompt": "Kliknij raz przycisk rozszerzenia asbplayer (obok paska adresu), aby włączyć nagrywanie audio dla tej karty.",
         "grantedPrompt": "Nagrywanie audio zostało włączone dla tej karty. Teraz możesz rozpocząć kopanie."
     },
     "audioCaptureFailed": {

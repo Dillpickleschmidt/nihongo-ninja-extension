@@ -307,8 +307,8 @@
     "activeTabPermissionRequest": {
         "title": "Activer l'enregistrement audio",
         "grantedTitle": "Enregistrement audio activé",
-        "prompt": "Cliquez sur le bouton d’action asbplayer en haut à droite de la fenêtre du navigateur pour activer l’enregistrement audio pour cet onglet.",
-        "grantedPrompt": "L’enregistrement audio a été activé pour cet onglet. Vous pouvez maintenant commencer l’extraction."
+        "prompt": "Cliquez une fois sur le bouton d'extension asbplayer (à côté de la barre d'adresse) pour activer l'enregistrement audio pour cet onglet.",
+        "grantedPrompt": "L'enregistrement audio a été activé pour cet onglet. Vous pouvez maintenant commencer l'extraction."
     },
     "audioCaptureFailed": {
         "message": "L’audio protégé par DRM ne peut pas être capturé dans la version Firefox d'asbplayer."

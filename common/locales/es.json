@@ -307,7 +307,7 @@
     "activeTabPermissionRequest": {
         "title": "Habilitar grabación de audio",
         "grantedTitle": "Grabación de audio habilitada",
-        "prompt": "Haz click en el botón de acción de asbplayer en la esquina superior derecha de la ventana del navegador para habilitar la grabación de audio para esta pestaña.",
+        "prompt": "Haz clic una vez en el botón de extensión asbplayer (junto a la barra de direcciones) para habilitar la grabación de audio para esta pestaña.",
         "grantedPrompt": "Grabación de audio habilitada para esta pestaña. Puedes empezar a minar."
     },
     "audioCaptureFailed": {

@@ -307,7 +307,7 @@
     "activeTabPermissionRequest": {
         "title": "Ota äänentallennus käyttöön",
         "grantedTitle": "Äänentallennus käytössä",
-        "prompt": "Napsauta selainikkunan yläoikeassa olevaa asbplayerin toiminto-painiketta, jotta äänen tallennus voidaan ottaa käyttöön tässä välilehdessä.",
+        "prompt": "Napsauta asbplayer-laajennuspainiketta (osoiterivin vieressä) kerran ottaaksesi äänentallentamisen käyttöön tässä välilehdessä.",
         "grantedPrompt": "Äänen tallennus on otettu käyttöön tässä välilehdessä. Voit nyt aloittaa louhinta."
     },
     "audioCaptureFailed": {

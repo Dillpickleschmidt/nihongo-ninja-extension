@@ -307,7 +307,7 @@
     "activeTabPermissionRequest": {
         "title": "Habilitar gravação de áudio.",
         "grantedTitle": "Gravação de áudio habilitada.",
-        "prompt": "Clique no botão de ação do asbplayer no canto superior direito da janela do navegador para habilitar a gravação de áudio para esta guia.",
+        "prompt": "Clique uma vez no botão de extensão asbplayer (próximo à barra de endereços) para habilitar a gravação de áudio para esta aba.",
         "grantedPrompt": "A gravação de áudio foi habilitada para esta guia. Agora você pode começar a minerar."
     },
     "audioCaptureFailed": {

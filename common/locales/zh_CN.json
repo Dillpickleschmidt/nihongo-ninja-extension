@@ -305,9 +305,9 @@
         "noVideoElementsDetected": "No videos detected."
     },
     "activeTabPermissionRequest": {
-        "title": "Enable audio recording",
-        "grantedTitle": "Audio recording enabled",
-        "prompt": "Click on the asbplayer action button in the top-right of the browser window to enable audio recording for this tab.",
+        "title": "启用音频录制",
+        "grantedTitle": "音频录制已启用",
+        "prompt": "点击一次 URL 栏旁边的 asbplayer 扩展按钮，为此标签页启用音频录制。",
         "grantedPrompt": "Audio recording has been enabled for this tab. You can now begin mining."
     },
     "audioCaptureFailed": {

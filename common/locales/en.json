@@ -307,7 +307,7 @@
     "activeTabPermissionRequest": {
         "title": "Enable audio recording",
         "grantedTitle": "Audio recording enabled",
-        "prompt": "Click on the asbplayer action button in the top-right of the browser window to enable audio recording for this tab.",
+        "prompt": "Click once on the asbplayer extension button (next to the url bar) to enable audio recording for this tab.",
         "grantedPrompt": "Audio recording has been enabled for this tab. You can now begin mining."
     },
     "audioCaptureFailed": {

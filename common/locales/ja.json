@@ -307,7 +307,7 @@
     "activeTabPermissionRequest": {
         "title": "音声記録を有効にしてください",
         "grantedTitle": "音声記録が有効になりました",
-        "prompt": "音声記録を有効するにはブラウザの右上にある asbplayer のアクションボタンをクリックしてください。",
+        "prompt": "asbplayer 拡張機能ボタン（URL バーの隣）を一度クリックして、このタブの音声記録を有効にしてください。",
         "grantedPrompt": "音声記録が有効になりました。マイニングを始めてください。"
     },
     "audioCaptureFailed": {

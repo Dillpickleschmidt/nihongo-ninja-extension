@@ -307,7 +307,7 @@
     "activeTabPermissionRequest": {
         "title": "오디오 녹음 활성화",
         "grantedTitle": "오디오 녹음 기능 사용 중",
-        "prompt": "오디오 녹음을 활성화하려면 브라우저 우측 상단의 asbplayer 버튼을 눌러주세요.",
+        "prompt": "asbplayer 확장 프로그램 버튼(URL 표시줄 옆)을 한 번 클릭하여 이 탭에서 오디오 녹음을 활성화하세요.",
         "grantedPrompt": "오디오 녹음이 활성화되었습니다. 자막 추출을 시작할 수 있습니다."
     },
     "audioCaptureFailed": {

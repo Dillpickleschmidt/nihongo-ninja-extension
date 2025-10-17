@@ -307,7 +307,7 @@
     "activeTabPermissionRequest": {
         "title": "Aktifkan perekaman audio",
         "grantedTitle": "Perekaman audio diaktifkan",
-        "prompt": "Klik tombol aksi asbplayer di kanan atas jendela browser untuk mengaktifkan perekaman audio pada tab ini.",
+        "prompt": "Klik sekali tombol ekstensi asbplayer (di samping bilah URL) untuk mengaktifkan perekaman audio pada tab ini.",
         "grantedPrompt": "Perekaman audio telah diaktifkan untuk tab ini. Anda sekarang dapat mulai menambang."
     },
     "audioCaptureFailed": {
