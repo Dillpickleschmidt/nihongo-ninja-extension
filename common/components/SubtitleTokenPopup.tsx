@@ -81,7 +81,7 @@ interface SubtitleTokenPopupProps {
     themeType?: string;
     onLookupYomitan?: (term: string) => Promise<YomitanTermEntry[]>;
     subtitle?: any;
-    onMine?: (subtitle: any, word?: string, definition?: string) => void;
+    onMine?: (subtitle: any, word?: string, definition?: string, reserved?: undefined, text?: string) => void;
 }
 
 // Helper function to group entries by (expression, reading) pairs
@@ -795,7 +795,25 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
                                             groupedEntries.length > 0 && currentGroupIndex < groupedEntries.length
                                                 ? extractJitendexMeanings(groupedEntries[currentGroupIndex])
                                                 : '';
-                                        onMine(subtitle, token?.base_form, definition);
+
+                                        // Replace all occurrences of the base form with "（　）" for cloze deletion
+                                        let replacedText = subtitle.text;
+                                        if (token && subtitle) {
+                                            const subtitleIndex = subtitle.index;
+                                            const allTokens = window.kagomeTokensBySubtitle?.get(subtitleIndex);
+                                            if (allTokens && token.base_form) {
+                                                const positions = allTokens
+                                                    .filter((t) => t.base_form === token.base_form)
+                                                    .map((t) => ({ start: t.start, end: t.end }))
+                                                    .sort((a, b) => b.start - a.start); // Sort descending to avoid offset drift
+
+                                                for (const {start, end} of positions) {
+                                                    replacedText = replacedText.substring(0, start) + '（　）' + replacedText.substring(end);
+                                                }
+                                            }
+                                        }
+
+                                        onMine(subtitle, token?.base_form, definition, undefined, replacedText);
                                         onClose();
                                     }}
                                     sx={{

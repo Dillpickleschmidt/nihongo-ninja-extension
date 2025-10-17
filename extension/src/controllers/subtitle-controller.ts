@@ -128,7 +128,7 @@ export default class SubtitleController {
         this.popupManager.initialize();
 
         // Set mining callback for the popup
-        this.popupManager.setMiningCallback((subtitle: any, word?: string, definition?: string) => {
+        this.popupManager.setMiningCallback((subtitle: any, word?: string, definition?: string, reserved?: undefined, text?: string) => {
             if (subtitle && subtitle.text) {
                 // Find surrounding subtitles for context
                 const subtitleIndex = this.subtitles.findIndex((s) => s.index === subtitle.index);
@@ -152,6 +152,7 @@ export default class SubtitleController {
                         surroundingSubtitles: surroundingSubtitlesData,
                         word: word,
                         definition: definition,
+                        text: text,
                     },
                     src: this.video.src,
                 };
