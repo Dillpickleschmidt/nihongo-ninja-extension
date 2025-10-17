@@ -98,7 +98,7 @@ const Popup = ({
                 <Grid
                     item
                     style={{
-                        height: isMobile ? 'auto' : 390,
+                        height: isMobile ? 'auto' : 430,
                     }}
                 >
                     <SettingsForm

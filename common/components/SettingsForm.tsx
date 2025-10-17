@@ -1378,6 +1378,7 @@ export default function SettingsForm({
     const tabIndicesById = useMemo(() => {
         const tabs = [
             'dictionary-settings',
+            'anki-settings',
             'mining-settings',
             'subtitle-appearance',
             'keyboard-shortcuts',
@@ -1686,23 +1687,17 @@ export default function SettingsForm({
                     marginRight: smallScreen ? 'auto' : 8,
                 }}
             >
-                {/* <Tab tabIndex={0} label={t('settings.anki')} id="anki-settings" /> */}
                 <Tab tabIndex={0} label={t('settings.dictionary')} id="dictionary-settings" />
-                <Tab tabIndex={1} label={t('settings.mining')} id="mining-settings" />
-                <Tab tabIndex={2} label={t('settings.subtitleAppearance')} id="subtitle-appearance" />
-                <Tab tabIndex={3} label={t('settings.keyboardShortcuts')} id="keyboard-shortcuts" />
+                <Tab tabIndex={1} label={t('settings.anki')} id="anki-settings" />
+                <Tab tabIndex={2} label={t('settings.mining')} id="mining-settings" />
+                <Tab tabIndex={3} label={t('settings.subtitleAppearance')} id="subtitle-appearance" />
+                <Tab tabIndex={4} label={t('settings.keyboardShortcuts')} id="keyboard-shortcuts" />
                 {extensionSupportsAppIntegration && (
-                    <Tab tabIndex={4} label={t('settings.streamingVideo')} id="streaming-video" />
+                    <Tab tabIndex={5} label={t('settings.streamingVideo')} id="streaming-video" />
                 )}
-                <Tab tabIndex={5} label={t('settings.misc')} id="misc-settings" />
-                <Tab tabIndex={6} label={t('about.title')} id="about" />
+                <Tab tabIndex={6} label={t('settings.misc')} id="misc-settings" />
+                <Tab tabIndex={7} label={t('about.title')} id="about" />
             </Tabs>
-            {/* <TabPanel
-                ref={ankiPanelRef}
-                value={tabIndex}
-                index={tabIndicesById['anki-settings']}
-                tabsOrientation={tabsOrientation}
-            > */}
             <TabPanel
                 value={tabIndex}
                 index={tabIndicesById['dictionary-settings']}
@@ -1731,7 +1726,7 @@ export default function SettingsForm({
                     </Button>
                 </FormGroup>
             </TabPanel>
-            {/* <TabPanel
+            <TabPanel
                 ref={ankiPanelRef}
                 value={tabIndex}
                 index={tabIndicesById['anki-settings']}
@@ -1994,7 +1989,7 @@ export default function SettingsForm({
                         </TutorialBubble>
                     )}
                 </FormGroup>
-            </TabPanel> */}
+            </TabPanel>
             <TabPanel value={tabIndex} index={tabIndicesById['mining-settings']} tabsOrientation={tabsOrientation}>
                 <FormLabel component="legend">{t('settings.clickToMineDefaultAction')}</FormLabel>
                 <RadioGroup row={false}>
