@@ -128,37 +128,39 @@ export default class SubtitleController {
         this.popupManager.initialize();
 
         // Set mining callback for the popup
-        this.popupManager.setMiningCallback((subtitle: any, word?: string, definition?: string, reserved?: undefined, text?: string) => {
-            if (subtitle && subtitle.text) {
-                // Find surrounding subtitles for context
-                const subtitleIndex = this.subtitles.findIndex((s) => s.index === subtitle.index);
-                const surroundingSubtitlesData =
-                    subtitleIndex >= 0
-                        ? surroundingSubtitles(
-                              this.subtitles,
-                              subtitleIndex,
-                              this.surroundingSubtitlesCountRadius,
-                              this.surroundingSubtitlesTimeRadius
-                          )
-                        : [];
+        this.popupManager.setMiningCallback(
+            (subtitle: any, word?: string, definition?: string, reserved?: undefined, text?: string) => {
+                if (subtitle && subtitle.text) {
+                    // Find surrounding subtitles for context
+                    const subtitleIndex = this.subtitles.findIndex((s) => s.index === subtitle.index);
+                    const surroundingSubtitlesData =
+                        subtitleIndex >= 0
+                            ? surroundingSubtitles(
+                                  this.subtitles,
+                                  subtitleIndex,
+                                  this.surroundingSubtitlesCountRadius,
+                                  this.surroundingSubtitlesTimeRadius
+                              )
+                            : [];
 
-                // Send mining message to background script
-                const miningMessage = {
-                    sender: 'asbplayer-video',
-                    message: {
-                        command: 'copy-subtitle',
-                        postMineAction: 1, // PostMineAction.showAnkiDialog
-                        subtitle: subtitle,
-                        surroundingSubtitles: surroundingSubtitlesData,
-                        word: word,
-                        definition: definition,
-                        text: text,
-                    },
-                    src: this.video.src,
-                };
-                browser.runtime.sendMessage(miningMessage);
+                    // Send mining message to background script
+                    const miningMessage = {
+                        sender: 'asbplayer-video',
+                        message: {
+                            command: 'copy-subtitle',
+                            postMineAction: 1, // PostMineAction.showAnkiDialog
+                            subtitle: subtitle,
+                            surroundingSubtitles: surroundingSubtitlesData,
+                            word: word,
+                            definition: definition,
+                            text: text,
+                        },
+                        src: this.video.src,
+                    };
+                    browser.runtime.sendMessage(miningMessage);
+                }
             }
-        });
+        );
 
         // Grammar pattern hover highlighting
         document.addEventListener(
@@ -683,6 +685,12 @@ export default class SubtitleController {
         }
     }
 
+    private updateGlobalSubtitleMap() {
+        for (const subtitle of this.subtitles) {
+            window.subtitlesByIndex!.set(subtitle.index, subtitle);
+        }
+    }
+
     offset(offset: number, skipNotifyPlayer = false) {
         if (!this.subtitles || this.subtitles.length === 0) {
             return;
@@ -697,7 +705,12 @@ export default class SubtitleController {
             originalEnd: s.originalEnd,
             track: s.track,
             index: s.index,
+            kagomeTokens: s.kagomeTokens,
+            grammarMatches: s.grammarMatches,
         }));
+
+        // Update for popup offset computation for audio recording
+        this.updateGlobalSubtitleMap();
 
         this.lastOffsetChangeTimestamp = Date.now();
 
