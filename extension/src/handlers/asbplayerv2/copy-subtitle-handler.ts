@@ -42,6 +42,10 @@ export default class CopySubtitleHandler {
                         postMineAction: copySubtitleCommand.message.postMineAction,
                         subtitle: copySubtitleCommand.message.subtitle,
                         surroundingSubtitles: copySubtitleCommand.message.surroundingSubtitles,
+                        word: copySubtitleCommand.message.word,
+                        definition: copySubtitleCommand.message.definition,
+                        text: copySubtitleCommand.message.text,
+                        customFieldValues: copySubtitleCommand.message.customFieldValues,
                     },
                     src: videoElement.src,
                 };

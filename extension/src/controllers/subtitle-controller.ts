@@ -128,20 +128,21 @@ export default class SubtitleController {
         this.popupManager.initialize();
 
         // Set mining callback for the popup
-        this.popupManager.setMiningCallback((subtitle: any) => {
+        this.popupManager.setMiningCallback((subtitle: any, word?: string, definition?: string) => {
             if (subtitle && subtitle.text) {
                 // Find surrounding subtitles for context
-                const subtitleIndex = this.subtitles.findIndex(s => s.index === subtitle.index);
-                const surroundingSubtitlesData = subtitleIndex >= 0
-                    ? surroundingSubtitles(
-                        this.subtitles,
-                        subtitleIndex,
-                        this.surroundingSubtitlesCountRadius,
-                        this.surroundingSubtitlesTimeRadius
-                      )
-                    : [];
+                const subtitleIndex = this.subtitles.findIndex((s) => s.index === subtitle.index);
+                const surroundingSubtitlesData =
+                    subtitleIndex >= 0
+                        ? surroundingSubtitles(
+                              this.subtitles,
+                              subtitleIndex,
+                              this.surroundingSubtitlesCountRadius,
+                              this.surroundingSubtitlesTimeRadius
+                          )
+                        : [];
 
-                // Send mining message to background script with full context
+                // Send mining message to background script
                 const miningMessage = {
                     sender: 'asbplayer-video',
                     message: {
@@ -149,6 +150,8 @@ export default class SubtitleController {
                         postMineAction: 1, // PostMineAction.showAnkiDialog
                         subtitle: subtitle,
                         surroundingSubtitles: surroundingSubtitlesData,
+                        word: word,
+                        definition: definition,
                     },
                     src: this.video.src,
                 };
@@ -156,7 +159,7 @@ export default class SubtitleController {
             }
         });
 
-        // Set up global event delegation for grammar pattern hover highlighting
+        // Grammar pattern hover highlighting
         document.addEventListener(
             'mouseover',
             (e) => {

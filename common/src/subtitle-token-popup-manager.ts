@@ -26,16 +26,16 @@ export class SubtitleTokenPopupManager {
     private clearTokenTimeout: number | null = null;
     private settings: SettingsProvider;
     private subtitleContainer: HTMLElement | null = null;
-    private onMineCallback: ((subtitle: any) => void) | null = null; // Mining callback
+    private onMineCallback: ((subtitle: any, word?: string, definition?: string) => void) | null = null;
 
     constructor() {
         this.settings = new SettingsProvider(new ExtensionSettingsStorage());
     }
 
     /**
-     * Set the mining callback to be called when the user clicks the mine button
+     * For when the user clicks the mine button
      */
-    setMiningCallback(callback: ((subtitle: any) => void) | null) {
+    setMiningCallback(callback: ((subtitle: any, word?: string, definition?: string) => void) | null) {
         this.onMineCallback = callback;
     }
 

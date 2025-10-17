@@ -80,8 +80,8 @@ interface SubtitleTokenPopupProps {
     onClose: () => void;
     themeType?: string;
     onLookupYomitan?: (term: string) => Promise<YomitanTermEntry[]>;
-    subtitle?: any; // The subtitle model/context for mining
-    onMine?: (subtitle: any) => void; // Callback to trigger mining action
+    subtitle?: any;
+    onMine?: (subtitle: any, word?: string, definition?: string) => void;
 }
 
 // Helper function to group entries by (expression, reading) pairs
@@ -97,6 +97,117 @@ const groupByVocabularySense = (entries: YomitanTermEntry[]): YomitanTermEntry[]
     }
 
     return Array.from(groups.values());
+};
+
+/**
+ * Extract English meanings from the first sense of a Jitendex glossary
+ * Looks for the first ul with data.content === "glossary" and extracts li text
+ * Returns empty string if not found or not from Jitendex
+ */
+const extractJitendexMeanings = (entries: YomitanTermEntry[]): string => {
+    // Only look at Jitendex entries
+    const jitendexEntry = entries.find((e) => e.dictionary && e.dictionary.includes('Jitendex'));
+    if (!jitendexEntry) {
+        return '';
+    }
+
+    const meanings = extractMeaningsFromGlossary(jitendexEntry.glossary);
+    return meanings.join('; ');
+};
+
+const extractMeaningsFromGlossary = (glossary: any[]): string[] => {
+    if (!glossary || !Array.isArray(glossary)) {
+        return [];
+    }
+
+    for (const item of glossary) {
+        if (item?.type === 'structured-content' && item?.content) {
+            const found = extractMeaningsFromContent(item.content);
+            if (found.length > 0) {
+                return found;
+            }
+        } else if (item?.content) {
+            const found = extractMeaningsFromContent(item.content);
+            if (found.length > 0) {
+                return found;
+            }
+        }
+    }
+
+    return [];
+};
+
+const extractMeaningsFromContent = (content: any): string[] => {
+    if (!content) {
+        return [];
+    }
+
+    if (Array.isArray(content)) {
+        for (const item of content) {
+            const found = extractMeaningsFromContent(item);
+            if (found.length > 0) {
+                return found;
+            }
+        }
+        return [];
+    }
+
+    if (typeof content === 'object') {
+        if (content.tag === 'ul' && content.data?.content === 'glossary' && content.content) {
+            // Extract text from li children
+            const meanings: string[] = [];
+            const liElements = Array.isArray(content.content) ? content.content : [content.content];
+
+            for (const liElement of liElements) {
+                if (liElement?.tag === 'li') {
+                    const text = extractTextFromElement(liElement.content);
+                    if (text) {
+                        meanings.push(text);
+                    }
+                }
+            }
+
+            if (meanings.length > 0) {
+                return meanings;
+            }
+        }
+
+        if (content.content) {
+            const found = extractMeaningsFromContent(content.content);
+            if (found.length > 0) {
+                return found;
+            }
+        }
+    }
+
+    return [];
+};
+
+/**
+ * Extract plain text from element content (recursively)
+ */
+const extractTextFromElement = (content: any): string => {
+    if (typeof content === 'string') {
+        return content;
+    }
+
+    if (Array.isArray(content)) {
+        return content
+            .map((item) => extractTextFromElement(item))
+            .filter((text) => text.length > 0)
+            .join(' ');
+    }
+
+    if (typeof content === 'object' && content !== null) {
+        if (content.text) {
+            return content.text;
+        }
+        if (content.content) {
+            return extractTextFromElement(content.content);
+        }
+    }
+
+    return '';
 };
 
 const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
@@ -666,25 +777,38 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
                     >
                         {/* Mining button */}
                         {subtitle && onMine && (
-                            <IconButton
-                                onClick={() => {
-                                    onMine(subtitle);
-                                    onClose();
-                                }}
-                                sx={{
+                            <div
+                                style={{
                                     position: 'absolute',
                                     top: 8,
                                     right: 8,
                                     zIndex: 10,
-                                    color: 'inherit',
-                                    '&:hover': {
-                                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                                    },
+                                    display: 'flex',
+                                    alignItems: 'center',
                                 }}
-                                title="Add to Anki"
                             >
-                                <NoteAddIcon fontSize="medium" />
-                            </IconButton>
+                                <span style={{ fontSize: '0.9rem', color: theme.palette.text.secondary }}>Add ➤</span>
+                                <IconButton
+                                    onClick={() => {
+                                        // Extract definition from first sense of Jitendex if available
+                                        const definition =
+                                            groupedEntries.length > 0 && currentGroupIndex < groupedEntries.length
+                                                ? extractJitendexMeanings(groupedEntries[currentGroupIndex])
+                                                : '';
+                                        onMine(subtitle, token?.base_form, definition);
+                                        onClose();
+                                    }}
+                                    sx={{
+                                        color: theme.palette.text.secondary,
+                                        '&:hover': {
+                                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                                        },
+                                    }}
+                                    title="Add to Anki"
+                                >
+                                    <NoteAddIcon fontSize="small" />
+                                </IconButton>
+                            </div>
                         )}
 
                         <div className="entry">
