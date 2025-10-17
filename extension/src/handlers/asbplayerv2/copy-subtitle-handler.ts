@@ -15,7 +15,7 @@ export default class CopySubtitleHandler {
     }
 
     get sender() {
-        return 'asbplayerv2';
+        return ['asbplayerv2', 'asbplayer-video'];
     }
 
     get command() {
@@ -24,9 +24,14 @@ export default class CopySubtitleHandler {
 
     handle(command: Command<Message>, sender: Browser.runtime.MessageSender) {
         const copySubtitleCommand = command as AsbPlayerToVideoCommand<CopySubtitleMessage>;
+
+        // Extract tabId from either message body or sender parameter
+        // For asbplayerv2 (side panel), it's in the message; for asbplayer-video (content script), it's in sender
+        const tabId = 'tabId' in copySubtitleCommand ? copySubtitleCommand.tabId : sender.tab?.id;
+
         this._tabRegistry.publishCommandToVideoElements(
             (videoElement): ExtensionToVideoCommand<Message> | undefined => {
-                if (videoElement.src !== copySubtitleCommand.src || videoElement.tab.id !== copySubtitleCommand.tabId) {
+                if (videoElement.src !== copySubtitleCommand.src || videoElement.tab.id !== tabId) {
                     return undefined;
                 }
 

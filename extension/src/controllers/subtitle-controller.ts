@@ -105,8 +105,9 @@ export default class SubtitleController {
         this.unblurredSubtitleTracks = {};
         this.disabledSubtitleTracks = {};
 
-        // Initialize global token map once (instead of checking on every subtitle build)
+        // Initialize global token and subtitle maps once (instead of checking on every subtitle build)
         window.kagomeTokensBySubtitle = new Map();
+        window.subtitlesByIndex = new Map();
         this.subtitleTrackAlignments = { 0: 'bottom' };
         this._forceHideSubtitles = false;
         this._displaySubtitles = true;
@@ -125,6 +126,35 @@ export default class SubtitleController {
         // Initialize popup manager
         this.popupManager = new SubtitleTokenPopupManager();
         this.popupManager.initialize();
+
+        // Set mining callback for the popup
+        this.popupManager.setMiningCallback((subtitle: any) => {
+            if (subtitle && subtitle.text) {
+                // Find surrounding subtitles for context
+                const subtitleIndex = this.subtitles.findIndex(s => s.index === subtitle.index);
+                const surroundingSubtitlesData = subtitleIndex >= 0
+                    ? surroundingSubtitles(
+                        this.subtitles,
+                        subtitleIndex,
+                        this.surroundingSubtitlesCountRadius,
+                        this.surroundingSubtitlesTimeRadius
+                      )
+                    : [];
+
+                // Send mining message to background script with full context
+                const miningMessage = {
+                    sender: 'asbplayer-video',
+                    message: {
+                        command: 'copy-subtitle',
+                        postMineAction: 1, // PostMineAction.showAnkiDialog
+                        subtitle: subtitle,
+                        surroundingSubtitles: surroundingSubtitlesData,
+                    },
+                    src: this.video.src,
+                };
+                browser.runtime.sendMessage(miningMessage);
+            }
+        });
 
         // Set up global event delegation for grammar pattern hover highlighting
         document.addEventListener(
@@ -541,6 +571,9 @@ export default class SubtitleController {
 
     private _buildSubtitleTextHtml(subtitle: SubtitleModelWithIndex) {
         const { text, track, kagomeTokens, grammarMatches } = subtitle;
+
+        // Store subtitle in global map for popup mining access
+        window.subtitlesByIndex!.set(subtitle.index, subtitle);
 
         // If we have kagome tokens, build grammar-enhanced HTML
         if (kagomeTokens && kagomeTokens.length > 0) {

@@ -6,10 +6,11 @@ import { TermDictionaryEntry } from '../../extension/src/services/yomitan-dictio
 import { SettingsProvider } from '../settings';
 import { ExtensionSettingsStorage } from '../../extension/src/services/extension-settings-storage';
 
-// Global token map (populated by SubtitleController)
+// Global token and subtitle maps (populated by SubtitleController)
 declare global {
     interface Window {
         kagomeTokensBySubtitle?: Map<number, KagomeToken[]>;
+        subtitlesByIndex?: Map<number, any>; // SubtitleModel objects
     }
 }
 
@@ -19,14 +20,23 @@ export class SubtitleTokenPopupManager {
     private isOpen: boolean = false;
     private anchorEl: HTMLElement | null = null;
     private token: KagomeToken | null = null;
+    private subtitle: any | null = null; // Current subtitle for mining
     private hoveredElement: HTMLElement | null = null;
     private shiftPressed: boolean = false;
     private clearTokenTimeout: number | null = null;
     private settings: SettingsProvider;
     private subtitleContainer: HTMLElement | null = null;
+    private onMineCallback: ((subtitle: any) => void) | null = null; // Mining callback
 
     constructor() {
         this.settings = new SettingsProvider(new ExtensionSettingsStorage());
+    }
+
+    /**
+     * Set the mining callback to be called when the user clicks the mine button
+     */
+    setMiningCallback(callback: ((subtitle: any) => void) | null) {
+        this.onMineCallback = callback;
     }
 
     initialize() {
@@ -120,19 +130,22 @@ export class SubtitleTokenPopupManager {
                 return;
             }
 
+            // Look up subtitle from global map
+            const subtitle = window.subtitlesByIndex?.get(subtitleIndex);
+
             // If targeting the same token that's currently active, close the popup
             if (this.isOpen && this.anchorEl === element) {
                 this.hidePopup();
                 return;
             }
 
-            this.showPopup(element, token);
+            this.showPopup(element, token, subtitle);
         } catch (error) {
             console.error('Failed to lookup token:', error);
         }
     }
 
-    private showPopup(anchorEl: HTMLElement, token: KagomeToken) {
+    private showPopup(anchorEl: HTMLElement, token: KagomeToken, subtitle?: any) {
         // Cancel any pending token clear timeout since we're showing new content
         if (this.clearTokenTimeout) {
             clearTimeout(this.clearTokenTimeout);
@@ -160,6 +173,7 @@ export class SubtitleTokenPopupManager {
         }
 
         this.token = token;
+        this.subtitle = subtitle || null; // Store subtitle for mining
         this.isOpen = true;
         this.render();
     }
@@ -230,6 +244,8 @@ export class SubtitleTokenPopupManager {
                     onClose: () => this.hidePopup(),
                     themeType,
                     onLookupYomitan: this.lookupYomitanTerm,
+                    subtitle: this.subtitle,
+                    onMine: this.onMineCallback || undefined,
                 })
             );
         }

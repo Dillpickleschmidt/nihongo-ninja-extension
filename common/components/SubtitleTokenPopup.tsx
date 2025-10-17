@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Popover from '@mui/material/Popover';
+import IconButton from '@mui/material/IconButton';
 import ChevronLeftRounded from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRounded from '@mui/icons-material/ChevronRightRounded';
+import NoteAddIcon from '@mui/icons-material/NoteAdd';
 import { ThemeProvider } from '@mui/material/styles';
 import { createTheme } from '../theme';
 import { KagomeToken } from '../src/model';
@@ -78,6 +80,8 @@ interface SubtitleTokenPopupProps {
     onClose: () => void;
     themeType?: string;
     onLookupYomitan?: (term: string) => Promise<YomitanTermEntry[]>;
+    subtitle?: any; // The subtitle model/context for mining
+    onMine?: (subtitle: any) => void; // Callback to trigger mining action
 }
 
 // Helper function to group entries by (expression, reading) pairs
@@ -102,6 +106,8 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
     onClose,
     themeType = 'dark',
     onLookupYomitan,
+    subtitle,
+    onMine,
 }) => {
     const theme = createTheme(themeType as 'dark' | 'light');
     const [yomitanData, setYomitanData] = useState<YomitanTermEntry[] | null>(null);
@@ -658,6 +664,29 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
                             lineHeight: 'var(--line-height)',
                         }}
                     >
+                        {/* Mining button */}
+                        {subtitle && onMine && (
+                            <IconButton
+                                onClick={() => {
+                                    onMine(subtitle);
+                                    onClose();
+                                }}
+                                sx={{
+                                    position: 'absolute',
+                                    top: 8,
+                                    right: 8,
+                                    zIndex: 10,
+                                    color: 'inherit',
+                                    '&:hover': {
+                                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                                    },
+                                }}
+                                title="Add to Anki"
+                            >
+                                <NoteAddIcon fontSize="medium" />
+                            </IconButton>
+                        )}
+
                         <div className="entry">
                             <div className="headword-list">
                                 <span className="headword-term">
