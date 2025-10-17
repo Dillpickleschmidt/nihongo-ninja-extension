@@ -1427,12 +1427,28 @@ export default function SettingsForm({
 
     // Helper function to send dictionary import message to background
     const sendDictionaryImport = useCallback(async (fileName: string, fileData: ArrayBuffer) => {
+        // Convert ArrayBuffer to Base64 string since browser.runtime.sendMessage
+        // cannot directly serialize ArrayBuffer objects across context boundaries
+        // Use FileReader API to avoid call stack overflow with large files
+        const blob = new Blob([fileData]);
+        const base64Data = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                // Remove the "data:application/octet-stream;base64," prefix
+                const result = reader.result as string;
+                const base64 = result.split(',')[1];
+                resolve(base64);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+
         const response = await browser.runtime.sendMessage({
             sender: 'settings-ui',
             message: {
                 command: 'dictionary-import',
                 fileName,
-                fileData,
+                fileDataBase64: base64Data,
             },
         });
 

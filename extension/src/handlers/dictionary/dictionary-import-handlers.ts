@@ -5,7 +5,7 @@ import { YomitanDictionaryService } from '../../services/yomitan-dictionary-serv
 interface DictionaryImportMessage extends Message {
     command: 'dictionary-import';
     fileName: string;
-    fileData: ArrayBuffer;
+    fileDataBase64: string;
 }
 
 interface DictionaryDownloadImportMessage extends Message {
@@ -60,7 +60,7 @@ export class DictionaryImportHandler implements CommandHandler {
     }
 
     private async performImport(message: DictionaryImportMessage): Promise<void> {
-        const { fileName, fileData } = message;
+        const { fileName, fileDataBase64 } = message;
 
         // Keep service worker alive during long import
         // Ping every 20 seconds to prevent termination
@@ -69,14 +69,20 @@ export class DictionaryImportHandler implements CommandHandler {
         }, 20000);
 
         try {
+            // Decode Base64 string back to ArrayBuffer
+            const binaryString = atob(fileDataBase64);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            const arrayBuffer = bytes.buffer;
+
             const service = await getDictionaryService();
 
-            // Convert ArrayBuffer back to File
-            const file = new File([fileData], fileName, { type: 'application/zip' });
+            // Convert ArrayBuffer to File
+            const file = new File([arrayBuffer], fileName, { type: 'application/zip' });
 
-            console.log(`[DictionaryImport] Importing ${fileName}...`);
             await service.importDictionary(file);
-            console.log(`[DictionaryImport] Completed: ${fileName}`);
 
             // Show success notification
             browser.notifications.create({
