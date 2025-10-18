@@ -1,4 +1,4 @@
-import { Command, Message } from '@project/common';
+import { Command, Message, DictionaryImportProgressMessage } from '@project/common';
 import { CommandHandler } from '../command-handler';
 import { YomitanDictionaryService } from '../../services/yomitan-dictionary-service';
 
@@ -82,7 +82,56 @@ export class DictionaryImportHandler implements CommandHandler {
             // Convert ArrayBuffer to File
             const file = new File([arrayBuffer], fileName, { type: 'application/zip' });
 
-            await service.importDictionary(file);
+            browser.runtime.sendMessage({
+                command: 'dictionary-import-progress',
+                stepInfo: 'Step 1 of 2: Preparing dictionary',
+                stepPercentage: 0,
+            } as DictionaryImportProgressMessage).catch(() => {});
+
+            let currentStep = 1;
+            let stepCount = 0;
+
+            const progressCallback = (progress: { index: number; count: number; nextStep?: boolean }) => {
+                const { index, count, nextStep } = progress;
+
+                if (nextStep) {
+                    stepCount++;
+                }
+
+                if (stepCount >= 4 && currentStep === 1) {
+                    currentStep = 2;
+                }
+
+                if (currentStep === 1 && count > 0) {
+                    const percentage = (index / count) * 100;
+
+                    const progressMessage: DictionaryImportProgressMessage = {
+                        command: 'dictionary-import-progress',
+                        stepInfo: 'Step 1 of 2: Preparing dictionary',
+                        stepPercentage: Math.round(percentage),
+                    };
+
+                    browser.runtime.sendMessage(progressMessage).catch(() => {
+                        // Ignore errors if tab is closed
+                    });
+                }
+
+                if (currentStep === 2 && count > 0) {
+                    const percentage = (index / count) * 100;
+
+                    const progressMessage: DictionaryImportProgressMessage = {
+                        command: 'dictionary-import-progress',
+                        stepInfo: 'Step 2 of 2: Importing dictionary',
+                        stepPercentage: Math.round(percentage),
+                    };
+
+                    browser.runtime.sendMessage(progressMessage).catch(() => {
+                        // Ignore errors if tab is closed
+                    });
+                }
+            };
+
+            await service.importDictionary(file, progressCallback);
 
             // Show success notification
             browser.notifications.create({
@@ -140,22 +189,111 @@ export class DictionaryDownloadImportHandler implements CommandHandler {
         try {
             console.log('[DictionaryDownload] Downloading Jitendex from GitHub...');
 
-            // Download in background
+            // Download in background with progress tracking
             const response = await fetch(JITENDEX_DOWNLOAD_URL);
 
             if (!response.ok) {
                 throw new Error(`Download failed: ${response.status}`);
             }
 
-            const arrayBuffer = await response.arrayBuffer();
+            // Get total size from content-length header
+            const contentLength = response.headers.get('content-length');
+            const totalBytes = contentLength ? parseInt(contentLength, 10) : 0;
+
+            const reader = response.body?.getReader();
+            if (!reader) {
+                throw new Error('Unable to read response body');
+            }
+
+            const chunks: Uint8Array[] = [];
+            let loadedBytes = 0;
+
+            while (true) {
+                const { done, value } = await reader.read();
+
+                if (done) break;
+
+                chunks.push(value);
+                loadedBytes += value.length;
+
+                const downloadProgress = totalBytes > 0 ? (loadedBytes / totalBytes) * 100 : 0;
+
+                const downloadProgressMessage: DictionaryImportProgressMessage = {
+                    command: 'dictionary-import-progress',
+                    stepInfo: 'Step 1 of 3: Downloading dictionary',
+                    stepPercentage: Math.round(downloadProgress),
+                };
+                browser.runtime.sendMessage(downloadProgressMessage).catch(() => {
+                    // Ignore errors
+                });
+            }
+
+            // Combine chunks into single ArrayBuffer
+            const arrayBuffer = new Uint8Array(loadedBytes);
+            let offset = 0;
+            for (const chunk of chunks) {
+                arrayBuffer.set(chunk, offset);
+                offset += chunk.length;
+            }
+
             console.log(`[DictionaryDownload] Downloaded ${(arrayBuffer.byteLength / 1024 / 1024).toFixed(2)} MB`);
 
             // Convert to File and import
             const file = new File([arrayBuffer], 'jitendex-yomitan.zip', { type: 'application/zip' });
 
+            browser.runtime.sendMessage({
+                command: 'dictionary-import-progress',
+                stepInfo: 'Step 2 of 3: Preparing dictionary',
+                stepPercentage: 0,
+            } as DictionaryImportProgressMessage).catch(() => {});
+
             console.log('[DictionaryDownload] Importing...');
             const service = await getDictionaryService();
-            await service.importDictionary(file);
+
+            let currentStep = 2;
+            let stepCount = 0;
+
+            const progressCallback = (progress: { index: number; count: number; nextStep?: boolean }) => {
+                const { index, count, nextStep } = progress;
+
+                if (nextStep) {
+                    stepCount++;
+                }
+
+                if (stepCount >= 4 && currentStep === 2) {
+                    currentStep = 3;
+                }
+
+                if (currentStep === 2 && count > 0) {
+                    const percentage = (index / count) * 100;
+
+                    const progressMessage: DictionaryImportProgressMessage = {
+                        command: 'dictionary-import-progress',
+                        stepInfo: 'Step 2 of 3: Preparing dictionary',
+                        stepPercentage: Math.round(percentage),
+                    };
+
+                    browser.runtime.sendMessage(progressMessage).catch(() => {
+                        // Ignore errors
+                    });
+                }
+
+                if (currentStep === 3 && count > 0) {
+                    const percentage = (index / count) * 100;
+
+                    const progressMessage: DictionaryImportProgressMessage = {
+                        command: 'dictionary-import-progress',
+                        stepInfo: 'Step 3 of 3: Importing dictionary',
+                        stepPercentage: Math.round(percentage),
+                    };
+
+                    browser.runtime.sendMessage(progressMessage).catch(() => {
+                        // Ignore errors
+                    });
+                }
+            };
+
+            await service.importDictionary(file, progressCallback);
             console.log('[DictionaryDownload] Completed');
 
             // Show success notification

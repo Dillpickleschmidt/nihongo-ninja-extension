@@ -32,6 +32,10 @@ export interface TermDictionaryEntry extends TermEntry {
     styles?: string; // Dictionary-specific CSS styles
 }
 
+export interface DictionaryImportProgressCallback {
+    (progress: { index: number; count: number }): void;
+}
+
 export class YomitanDictionaryService {
     private db = new DictionaryDatabase();
     private importer: DictionaryImporter;
@@ -61,8 +65,10 @@ export class YomitanDictionaryService {
 
     /**
      * Import a Yomitan dictionary from a ZIP file
+     * @param zipFile The dictionary ZIP file to import
+     * @param progressCallback Optional callback to receive progress updates
      */
-    async importDictionary(zipFile: File): Promise<void> {
+    async importDictionary(zipFile: File, progressCallback?: DictionaryImportProgressCallback): Promise<void> {
         if (!this.initialized) {
             throw new Error('Dictionary service not initialized. Call init() first.');
         }
@@ -73,12 +79,19 @@ export class YomitanDictionaryService {
             // Convert File to ArrayBuffer for Yomitan
             const arrayBuffer = await zipFile.arrayBuffer();
 
+            // Create a new importer with progress callback if provided
+            let importer = this.importer;
+            if (progressCallback) {
+                const mediaLoader = new DictionaryImporterMediaLoader();
+                importer = new DictionaryImporter(mediaLoader, progressCallback);
+            }
+
             // Use DictionaryImporter.importDictionary method
             const importDetails = {
                 prefixWildcardsSupported: true,
             };
 
-            const result = await this.importer.importDictionary(this.db, arrayBuffer, importDetails);
+            const result = await importer.importDictionary(this.db, arrayBuffer, importDetails);
 
             console.log(`Successfully imported dictionary: ${zipFile.name}`, result);
         } catch (error) {

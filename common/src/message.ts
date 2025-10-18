@@ -736,3 +736,9 @@ export interface DeleteCopyHistoryMessage extends MessageWithId {
 export interface ClearCopyHistoryMessage extends MessageWithId {
     readonly command: 'clear-copy-history';
 }
+
+export interface DictionaryImportProgressMessage extends Message {
+    readonly command: 'dictionary-import-progress';
+    readonly stepInfo: string;
+    readonly stepPercentage: number;
+}
