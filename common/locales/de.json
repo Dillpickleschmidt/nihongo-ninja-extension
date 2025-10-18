@@ -245,7 +245,7 @@
     "ftue": {
         "welcome": "Welcome to asbplayer.",
         "welcomeBody": "Check out the <0>readme</0> to see how to get started.",
-        "welcomeBody2": "Scroll down for a quick intro, or check out the <0>user guide</0>.",
+        "welcomeBody2": "Click \"Get Started\" or scroll down for a quick intro, or check out the <0>user guide</0>.",
         "toolbar": "Click the 🧩 icon in the toolbar, and select <0>asbplayer</0> to open the asbplayer <1>Popup</1>.<2/>Use the 📌 button to pin asbplayer to the toolbar for easy access.",
         "sidePanel": "Use the <0>Side Panel</0> to <1>navigate</1> between subtitles, <2>mine</2> subtitles, and more.",
         "overlayScroll": "<0>Scroll</0> the rightmost control to switch between <1>subtitle navigation</1>, <2>subtitle offset</2>, and <3>playback rate</3> controls.",

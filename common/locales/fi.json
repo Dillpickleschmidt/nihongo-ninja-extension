@@ -245,7 +245,7 @@
     "ftue": {
         "welcome": "Tervetuloa asbplayeriin.",
         "welcomeBody": "Tutustu <0>lue</0> nähdäksesi miten pääset alkuun.",
-        "welcomeBody2": "Vieritä alas nopeasti intro, tai tutustu <0>käyttöopas</0>.",
+        "welcomeBody2": "Klikkaa \"Get Started\" -painiketta tai vieritä alas nopeaa johdantoa varten, tai tutustu <0>käyttöoppaaseen</0>.",
         "toolbar": "Napsauta työkalupalkin 🧩-kuvaketta ja valitse <0>asbplayer</0> avataksesi asbplayerin <1>ponnahdusikkunan</1>.<2/>Kiinnitä asbplayer työkalupalkkiin {{pin}}-painikkeella helpottaaksesi sen käyttöä.",
         "sidePanel": "Käytä <0>Side Panel</0> <1>navigoida</1> tekstitysten välillä, <2>kaivos</2> tekstitys ja enemmän.",
         "overlayScroll": "<0>Vieritä</0> Oikein ohjain vaihtaa välillä <1>tekstitys navigointi</1>, <2>tekstityksen offset</2>ja <3>toistotaajuus</3> hallintaa.",
