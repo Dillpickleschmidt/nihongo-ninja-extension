@@ -19,6 +19,7 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import { AsbPlayerToVideoCommandV2, RequestSubtitlesMessage, RequestSubtitlesResponse } from '@project/common';
 import TutorialBubble from '@project/common/components/TutorialBubble';
 import { isFirefox } from '@project/common/browser-detection';
+import PuzzleIcon from './icons/PuzzleIcon';
 
 const settingsProvider = new SettingsProvider(new ExtensionSettingsStorage());
 const tabRegistry = new TabRegistry(settingsProvider);
@@ -83,7 +84,7 @@ const ToolbarBubble: React.FC<{ show: boolean; onConfirm: () => void }> = ({ sho
             text={
                 <Trans
                     i18nKey="ftue.toolbar"
-                    components={[<b key={0}>asbplayer</b>, <b key={1}>Popup</b>, <p key={2} />]}
+                    components={[<b key={0}>asbplayer</b>, <b key={1}>Popup</b>, <p key={2} />, <PuzzleIcon key={3} sx={{ fontSize: '1.1rem', verticalAlign: '-0.125em' }} />]}
                     values={{ pin: isFirefox ? '⚙' : '📌' }}
                 />
             }

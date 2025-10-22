@@ -246,7 +246,7 @@
         "welcome": "Selamat datang di asbplayer.",
         "welcomeBody": "Baca <0>readme</0> untuk melihat cara memulai.",
         "welcomeBody2": "Klik \"Get Started\" atau gulir ke bawah untuk pengenalan singkat, atau buka <0>panduan pengguna</0>.",
-        "toolbar": "Klik ikon 🧩 di bilah alat, lalu pilih <0>asbplayer</0> untuk membuka <1>Popup</1>.<2/>Gunakan tombol {{pin}} untuk menyematkan asbplayer ke bilah alat agar mudah diakses.",
+        "toolbar": "Klik ikon <3/> di bilah alat, lalu pilih <0>asbplayer</0> untuk membuka <1>Popup</1>.<2/>Gunakan tombol {pin}} untuk menyematkan asbplayer ke bilah alat agar mudah diakses.",
         "sidePanel": "Gunakan <0>Panel Samping</0> untuk <1>menavigasi</1> antar takarir, <2>menambang</2> takarir, dan lainnya.",
         "overlayScroll": "<0>Gulir</0> kontrol paling kanan untuk berpindah antara <1>navigasi takarir</1>, <2>offset takarir</2>, dan <3>kecepatan pemutaran</3>.",
         "overlay": "Gunakan <0>Lapisan Video</0> untuk <1>menambang</1> dan <2>tampilkan/sembunyikan</2> takarir, <3>berpindah mode pemutaran</3>, dan lainnya.",
