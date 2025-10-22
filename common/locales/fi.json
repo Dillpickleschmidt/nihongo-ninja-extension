@@ -251,7 +251,7 @@
         "overlayScroll": "<0>Vieritä</0> Oikein ohjain vaihtaa välillä <1>tekstitys navigointi</1>, <2>tekstityksen offset</2>ja <3>toistotaajuus</3> hallintaa.",
         "overlay": "Käytä <0>Video Overlay</0> <1>mine</1> ja <2>päälle</2> tekstityksiä, <3>vaihda toistotilat</3>ja enemmän.",
         "congrats": "Se on perusasiat! Voit pelata vapaasti tällä sivulla.",
-        "loadSubtitles": "Ensimmäinen askel asbplayerin käyttöön on aina ladata tekstitys videolle. Käytä <0>Side Panel</0> ladataksesi tekstitykset videon tällä sivulla.<1/>Vihje: <2>Sivupaneeli</2> pääsee läpi <3>Popup</3>.",
+        "loadSubtitles": "<0>Ensimmäinen askel asbplayerin käyttöön on aina ladata tekstitys videolle.</0>1. Avaa <1>Popup</1> <2/><3/>2. Napsauta '<4>Avaa sivupaneeli</4>' ylhäällä<5/>3. Napsauta '<6>Lataa tekstitykset</6>'",
         "loadSubtitlesFirefox": "Ensimmäinen askel asbplayerin käyttöön on aina ladata tekstitys videolle. <0>Klikkaa hiiren oikealla painikkeella</0> videosta ja löydä asbplayer <1>kontekstivalikko</1> ladataksesi tekstityksiä.",
         "loadSubtitlesMobile": "Ensimmäinen askel asbplayerin käyttöön on aina ladata tekstitys videolle. Avaa raidan valitsin valitsemalla <0>asbplayer</0> <1>laajennus</1> valikossa.",
         "ankiConnect": "<0>AnkiConnect</0> mahdollistaa asbplayerin yhteyden <1>Anki</1>.",

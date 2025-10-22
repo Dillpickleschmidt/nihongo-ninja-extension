@@ -107,10 +107,13 @@ const LoadSubtitlesDialog: React.FC<{ open: boolean; count?: number; onClose: ()
                     <Trans
                         i18nKey="ftue.loadSubtitles"
                         components={[
-                            <b key={0}>Side Panel</b>,
-                            <p key={1} />,
-                            <b key={2}>Side Panel</b>,
-                            <b key={3}>Popup</b>,
+                            <div key={0} style={{ fontSize: '1.1rem', fontWeight: 500 }} />,
+                            <b key={1}>Popup</b>,
+                            <img key={2} src={browser.runtime.getURL('/icon/icon16.png')} alt="asbplayer" style={{ height: '1em', marginLeft: '0.25em', verticalAlign: '-0.125em' }} />,
+                            <br key={3} />,
+                            <b key={4}>Open Side Panel</b>,
+                            <br key={5} />,
+                            <b key={6}>Load Subtitles</b>,
                         ]}
                     />
                 )}

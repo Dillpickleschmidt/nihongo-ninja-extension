@@ -251,7 +251,7 @@
         "overlayScroll": "<0>Gulir</0> kontrol paling kanan untuk berpindah antara <1>navigasi takarir</1>, <2>offset takarir</2>, dan <3>kecepatan pemutaran</3>.",
         "overlay": "Gunakan <0>Lapisan Video</0> untuk <1>menambang</1> dan <2>tampilkan/sembunyikan</2> takarir, <3>berpindah mode pemutaran</3>, dan lainnya.",
         "congrats": "Itu saja untuk dasar-dasarnya! Silakan bereksperimen di halaman ini.",
-        "loadSubtitles": "Langkah pertama dalam menggunakan asbplayer adalah selalu memuat takarir ke dalam video. Gunakan <0>Panel Samping</0> untuk memuat takarir ke dalam video di halaman ini.<1/>Tip: <2>Panel Samping</2> dapat diakses melalui <3>Popup</3>.",
+        "loadSubtitles": "<0>Langkah pertama dalam menggunakan asbplayer adalah selalu memuat takarir ke dalam video.</0>1. Buka <1>Popup</1> <2/><3/>2. Klik '<4>Buka Panel Samping</4>' di atas<5/>3. Klik '<6>Muat Takarir</6>'",
         "loadSubtitlesFirefox": "Langkah pertama dalam menggunakan asbplayer adalah selalu memuat takarir ke dalam video. <0>Klik kanan</0> pada video dan temukan <1>menu konteks</1> asbplayer untuk memuat takarir.",
         "loadSubtitlesMobile": "Langkah pertama dalam menggunakan asbplayer adalah selalu memuat takarir ke dalam video. Buka pemilih trek dengan memilih <0>asbplayer</0> di menu <1>ekstensi</1>.",
         "ankiConnect": "<0>AnkiConnect</0> memungkinkan asbplayer terhubung dengan <1>Anki</1>.",
