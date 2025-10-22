@@ -106,6 +106,19 @@ export default defineBackground(() => {
 
         browser.tabs.create({ url: browser.runtime.getURL('/ftue-ui.html'), active: true });
 
+        console.log('[Extension Install] Starting automatic dictionary download...');
+        browser.notifications.create({
+            type: 'basic',
+            iconUrl: 'icon/icon128.png',
+            title: 'Importing Dictionary',
+            message: "Keep your browser open during this process (else you'll have to reinstall)!",
+        });
+
+        const dictionaryHandler = new DictionaryDownloadImportHandler();
+        dictionaryHandler.downloadAndImport().catch((error) => {
+            console.error('[Extension Install] Failed to start dictionary download:', error);
+        });
+
         console.log('[Extension Install] Preloading Kagome WASM...');
         try {
             await loadKagomeWasm();
@@ -160,11 +173,7 @@ export default defineBackground(() => {
             return 'japanese-analysis';
         }
 
-        handle(
-            command: Command<Message>,
-            sender: any,
-            sendResponse: (response: any) => void
-        ): boolean {
+        handle(command: Command<Message>, sender: any, sendResponse: (response: any) => void): boolean {
             const message = command.message as JapaneseAnalysisMessage;
 
             console.log('[Japanese Analysis] Analyzing', message.texts.length, 'texts');

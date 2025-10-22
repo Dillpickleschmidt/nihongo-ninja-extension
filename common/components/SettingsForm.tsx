@@ -1472,28 +1472,6 @@ export default function SettingsForm({
         }
     }, []);
 
-    const handleGetRecommendedDictionary = useCallback(async () => {
-        try {
-            const result = await browser.runtime.sendMessage({
-                sender: 'settings-ui',
-                message: {
-                    command: 'dictionary-download-import',
-                },
-            });
-
-            if (result?.success) {
-                console.log('Jitendex download started in background');
-                // Progress will be shown via messages
-            } else {
-                console.error('Failed to start dictionary download:', result?.error);
-                onResetDictionaryImportProgress();
-            }
-        } catch (error) {
-            console.error('Failed to start recommended dictionary download:', error);
-            onResetDictionaryImportProgress();
-        }
-    }, []);
-
     const handleImportDictionary = useCallback(async () => {
         // If in popup context, open options page instead
         if (window.location.pathname.includes('popup')) {
@@ -1719,13 +1697,6 @@ export default function SettingsForm({
                     <Typography variant="body2" color="textSecondary" style={{ marginBottom: 16 }}>
                         Import Yomitan-compatible dictionary files for Japanese language support.
                     </Typography>
-                    <Button
-                        variant="contained"
-                        onClick={handleGetRecommendedDictionary}
-                        style={{ marginBottom: 8, marginRight: 8 }}
-                    >
-                        Get Recommended Dictionary (Jitendex)
-                    </Button>
                     <Button variant="outlined" onClick={handleImportDictionary} style={{ marginBottom: 8 }}>
                         {t('settings.importDictionary')}
                     </Button>

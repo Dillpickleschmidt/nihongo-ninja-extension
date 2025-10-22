@@ -21,6 +21,8 @@ export function useDictionaryImportProgress() {
                     stepInfo,
                     percentage: stepPercentage,
                 });
+            } else if (message.command === 'dictionary-import-complete') {
+                setDictionaryImportProgress({ visible: false, stepInfo: '', percentage: 0 });
             }
         };
 

@@ -82,11 +82,13 @@ export class DictionaryImportHandler implements CommandHandler {
             // Convert ArrayBuffer to File
             const file = new File([arrayBuffer], fileName, { type: 'application/zip' });
 
-            browser.runtime.sendMessage({
-                command: 'dictionary-import-progress',
-                stepInfo: 'Step 1 of 2: Preparing dictionary',
-                stepPercentage: 0,
-            } as DictionaryImportProgressMessage).catch(() => {});
+            browser.runtime
+                .sendMessage({
+                    command: 'dictionary-import-progress',
+                    stepInfo: 'Step 1 of 2: Preparing dictionary',
+                    stepPercentage: 0,
+                } as DictionaryImportProgressMessage)
+                .catch(() => {});
 
             let currentStep = 1;
             let stepCount = 0;
@@ -140,6 +142,12 @@ export class DictionaryImportHandler implements CommandHandler {
                 title: 'Dictionary Import Complete',
                 message: `Successfully imported ${fileName}`,
             });
+
+            browser.runtime
+                .sendMessage({
+                    command: 'dictionary-import-complete',
+                })
+                .catch(() => {});
         } finally {
             // Always stop keep-alive, even if import fails
             clearInterval(keepAlive);
@@ -179,7 +187,7 @@ export class DictionaryDownloadImportHandler implements CommandHandler {
         return true; // Indicates we will call sendResponse asynchronously
     }
 
-    private async downloadAndImport(): Promise<void> {
+    async downloadAndImport(): Promise<void> {
         // Keep service worker alive during long download + import
         // Ping every 20 seconds to prevent termination
         const keepAlive = setInterval(() => {
@@ -241,11 +249,13 @@ export class DictionaryDownloadImportHandler implements CommandHandler {
             // Convert to File and import
             const file = new File([arrayBuffer], 'jitendex-yomitan.zip', { type: 'application/zip' });
 
-            browser.runtime.sendMessage({
-                command: 'dictionary-import-progress',
-                stepInfo: 'Step 2 of 3: Preparing dictionary',
-                stepPercentage: 0,
-            } as DictionaryImportProgressMessage).catch(() => {});
+            browser.runtime
+                .sendMessage({
+                    command: 'dictionary-import-progress',
+                    stepInfo: 'Step 2 of 3: Preparing dictionary',
+                    stepPercentage: 0,
+                } as DictionaryImportProgressMessage)
+                .catch(() => {});
 
             console.log('[DictionaryDownload] Importing...');
             const service = await getDictionaryService();
@@ -300,9 +310,15 @@ export class DictionaryDownloadImportHandler implements CommandHandler {
             browser.notifications.create({
                 type: 'basic',
                 iconUrl: 'icon/icon128.png',
-                title: 'Jitendex Dictionary Installed',
-                message: 'Successfully downloaded and imported Jitendex dictionary',
+                title: 'Dictionary Installation Successful',
+                message: 'Ready to parse Japanese!',
             });
+
+            browser.runtime
+                .sendMessage({
+                    command: 'dictionary-import-complete',
+                })
+                .catch(() => {});
         } finally {
             // Always stop keep-alive, even if download/import fails
             clearInterval(keepAlive);
