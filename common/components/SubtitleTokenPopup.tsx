@@ -73,6 +73,9 @@ const addDictionaryScopeToCss = (css: string, dictionaryTitle: string): string =
     return addScopeToCss(css, `[data-dictionary="${escapedTitle}"]`);
 };
 
+// Whitelist of surface forms that should stay as-is (not converted to base form)
+const SURFACE_FORM_WHITELIST = new Set(['たら']);
+
 interface SubtitleTokenPopupProps {
     open: boolean;
     anchorEl: HTMLElement | null;
@@ -84,7 +87,7 @@ interface SubtitleTokenPopupProps {
     onMine?: (subtitle: any, word?: string, definition?: string, reserved?: undefined, text?: string) => void;
 }
 
-// Helper function to group entries by (expression, reading) pairs
+// Group entries by (expression, reading) pairs
 const groupByVocabularySense = (entries: YomitanTermEntry[]): YomitanTermEntry[][] => {
     const groups = new Map<string, YomitanTermEntry[]>();
 
@@ -97,6 +100,11 @@ const groupByVocabularySense = (entries: YomitanTermEntry[]): YomitanTermEntry[]
     }
 
     return Array.from(groups.values());
+};
+
+// surface form if whitelisted, otherwise base form
+const getDisplayForm = (token: KagomeToken): string => {
+    return SURFACE_FORM_WHITELIST.has(token.surface) ? token.surface : token.base_form;
 };
 
 /**
@@ -505,7 +513,7 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
 
             // Yomitan lookup
             if (onLookupYomitan) {
-                onLookupYomitan(token.base_form)
+                onLookupYomitan(getDisplayForm(token))
                     .then((yomitanResult) => {
                         setYomitanData(yomitanResult);
                         // Group entries by (expression, reading)
@@ -807,8 +815,11 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
                                                     .map((t) => ({ start: t.start, end: t.end }))
                                                     .sort((a, b) => b.start - a.start); // Sort descending to avoid offset drift
 
-                                                for (const {start, end} of positions) {
-                                                    replacedText = replacedText.substring(0, start) + '（　）' + replacedText.substring(end);
+                                                for (const { start, end } of positions) {
+                                                    replacedText =
+                                                        replacedText.substring(0, start) +
+                                                        '（　）' +
+                                                        replacedText.substring(end);
                                                 }
                                             }
                                         }
@@ -834,7 +845,7 @@ const SubtitleTokenPopup: React.FC<SubtitleTokenPopupProps> = ({
                                 <span className="headword-term">
                                     {groupedEntries.length > 0 && currentGroupIndex < groupedEntries.length
                                         ? groupedEntries[currentGroupIndex][0].expression
-                                        : token.base_form}
+                                        : getDisplayForm(token)}
                                 </span>
                                 <span className="headword-reading">
                                     {groupedEntries.length > 0 && currentGroupIndex < groupedEntries.length

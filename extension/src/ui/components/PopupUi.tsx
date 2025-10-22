@@ -63,6 +63,7 @@ export function PopupUi({ commands }: Props) {
     const handleOpenSidePanel = useCallback(async () => {
         // @ts-ignore
         browser.sidePanel.open({ windowId: (await browser.windows.getLastFocused()).id });
+        window.close();
     }, []);
 
     const handleOpenUserGuide = useCallback(() => {
