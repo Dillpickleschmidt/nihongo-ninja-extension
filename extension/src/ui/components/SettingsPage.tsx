@@ -18,6 +18,8 @@ import SettingsProfileSelectMenu from '@project/common/components/SettingsProfil
 import { AsbplayerSettings, Profile, testCard } from '@project/common/settings';
 import { useTheme, type Theme } from '@mui/material/styles';
 import { settingsPageConfigs } from '@/services/pages';
+import DictionaryImportProgress from '@project/common/components/DictionaryImportProgress';
+import { useDictionaryImportProgress } from '../hooks/use-dictionary-import-progress';
 
 const useStyles = makeStyles<Theme>((theme) => ({
     root: {
@@ -88,6 +90,7 @@ const SettingsPage = ({ settings, inTutorial, onSettingsChanged, ...profileConte
         return undefined;
     }, []);
     const { supportedLanguages } = useSupportedLanguages();
+    const { dictionaryImportProgress, handleReset } = useDictionaryImportProgress();
 
     if (!settings || !anki || !commands || !i18nInitialized) {
         return null;
@@ -97,6 +100,13 @@ const SettingsPage = ({ settings, inTutorial, onSettingsChanged, ...profileConte
         <Paper square style={{ height: '100vh' }}>
             <Dialog open={true} maxWidth="md" fullWidth className={classes.root} onClose={() => {}}>
                 <DialogTitle>{t('settings.title')}</DialogTitle>
+                {dictionaryImportProgress.visible && (
+                    <DictionaryImportProgress
+                        visible={dictionaryImportProgress.visible}
+                        stepInfo={dictionaryImportProgress.stepInfo}
+                        percentage={dictionaryImportProgress.percentage}
+                    />
+                )}
                 <DialogContent className={classes.content}>
                     <SettingsForm
                         anki={anki}
@@ -124,6 +134,7 @@ const SettingsPage = ({ settings, inTutorial, onSettingsChanged, ...profileConte
                         scrollToId={section}
                         inTutorial={inTutorial}
                         testCard={extensionTestCard}
+                        onResetDictionaryImportProgress={handleReset}
                     />
                 </DialogContent>
                 <Box style={{ marginBottom: theme.spacing(2) }} className={classes.profilesContainer}>

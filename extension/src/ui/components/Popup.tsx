@@ -21,6 +21,8 @@ import { settingsPageConfigs } from '@/services/pages';
 import Stack from '@mui/material/Stack';
 import TutorialIcon from '@project/common/components/TutorialIcon';
 import Paper from '@mui/material/Paper';
+import DictionaryImportProgress from '@project/common/components/DictionaryImportProgress';
+import { useDictionaryImportProgress } from '../hooks/use-dictionary-import-progress';
 
 interface Props {
     settings: AsbplayerSettings;
@@ -74,6 +76,7 @@ const Popup = ({
     const { supportedLanguages } = useSupportedLanguages();
     const { localFontsAvailable, localFontsPermission, localFontFamilies } = useLocalFontFamilies();
     const theme = useTheme();
+    const { dictionaryImportProgress, handleReset } = useDictionaryImportProgress();
 
     if (!i18nInitialized) {
         return null;
@@ -82,6 +85,11 @@ const Popup = ({
     return (
         <Paper>
             <Stack direction="column" spacing={1.5} sx={{ padding: theme.spacing(1.5) }}>
+                <DictionaryImportProgress
+                    visible={dictionaryImportProgress.visible}
+                    stepInfo={dictionaryImportProgress.stepInfo}
+                    percentage={dictionaryImportProgress.percentage}
+                />
                 <ButtonGroup fullWidth variant="contained" color="primary" orientation="horizontal">
                     <Button variant="contained" color="primary" startIcon={<LaunchIcon />} onClick={onOpenApp}>
                         {t('action.openApp')}
@@ -125,6 +133,7 @@ const Popup = ({
                         onSettingsChanged={onSettingsChanged}
                         onOpenChromeExtensionShortcuts={onOpenExtensionShortcuts}
                         onUnlockLocalFonts={handleUnlockLocalFonts}
+                        onResetDictionaryImportProgress={handleReset}
                     />
                 </Grid>
                 <Grid item>

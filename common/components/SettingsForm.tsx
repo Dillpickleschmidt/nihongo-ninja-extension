@@ -95,7 +95,6 @@ import KeyBindRelatedSetting from './KeyBindRelatedSetting';
 import PageSettingsForm from './PageSettingsForm';
 import TuneIcon from '@mui/icons-material/Tune';
 import { pageMetadata } from '../pages';
-import DictionaryImportProgress from './DictionaryImportProgress';
 
 const defaultDeckName = 'Sentences';
 
@@ -837,6 +836,7 @@ interface Props {
     onSettingsChanged: (settings: Partial<AsbplayerSettings>) => void;
     onOpenChromeExtensionShortcuts: () => void;
     onUnlockLocalFonts: () => void;
+    onResetDictionaryImportProgress: () => void;
 }
 
 // Filter out keys that look like '0', '1', ... as those are invalid
@@ -871,6 +871,7 @@ export default function SettingsForm({
     onSettingsChanged,
     onOpenChromeExtensionShortcuts,
     onUnlockLocalFonts,
+    onResetDictionaryImportProgress,
 }: Props) {
     const theme = useTheme();
     const smallScreen = useMediaQuery(theme.breakpoints.down(500)) && !forceVerticalTabs;
@@ -1406,36 +1407,6 @@ export default function SettingsForm({
     }, [scrollToId, tabIndicesById]);
 
     const [tabIndex, setTabIndex] = useState<number>(0);
-    const [dictionaryImportProgress, setDictionaryImportProgress] = useState({
-        visible: false,
-        stepInfo: '',
-        percentage: 0,
-    });
-
-    // Message listener for dictionary import progress
-    useEffect(() => {
-        const handleMessage = (
-            message: any,
-            sender: Browser.runtime.MessageSender,
-            sendResponse: (response?: any) => void
-        ) => {
-            if (message.command === 'dictionary-import-progress') {
-                const { stepInfo, stepPercentage } = message;
-
-                setDictionaryImportProgress({
-                    visible: true,
-                    stepInfo,
-                    percentage: stepPercentage,
-                });
-            }
-        };
-
-        browser.runtime.onMessage.addListener(handleMessage);
-
-        return () => {
-            browser.runtime.onMessage.removeListener(handleMessage);
-        };
-    }, []);
 
     const validRegex = useMemo(() => regexIsValid(subtitleRegexFilter), [subtitleRegexFilter]);
     const settingsFileInputRef = useRef<HTMLInputElement>(null);
@@ -1490,13 +1461,13 @@ export default function SettingsForm({
                 console.log(`Dictionary import started in background: ${fileName}`);
             } else {
                 console.error('Failed to start dictionary import:', response?.error);
-                setDictionaryImportProgress({ visible: false, stepInfo: '', percentage: 0 });
+                onResetDictionaryImportProgress();
             }
 
             return response;
         } catch (error) {
             console.error('Error sending dictionary import message:', error);
-            setDictionaryImportProgress({ visible: false, stepInfo: '', percentage: 0 });
+            onResetDictionaryImportProgress();
             throw error;
         }
     }, []);
@@ -1515,11 +1486,11 @@ export default function SettingsForm({
                 // Progress will be shown via messages
             } else {
                 console.error('Failed to start dictionary download:', result?.error);
-                setDictionaryImportProgress({ visible: false, stepInfo: '', percentage: 0 });
+                onResetDictionaryImportProgress();
             }
         } catch (error) {
             console.error('Failed to start recommended dictionary download:', error);
-            setDictionaryImportProgress({ visible: false, stepInfo: '', percentage: 0 });
+            onResetDictionaryImportProgress();
         }
     }, []);
 
@@ -1740,11 +1711,7 @@ export default function SettingsForm({
                 <Tab tabIndex={6} label={t('settings.misc')} id="misc-settings" />
                 <Tab tabIndex={7} label={t('about.title')} id="about" />
             </Tabs>
-            <TabPanel
-                value={tabIndex}
-                index={tabIndicesById['dictionary-settings']}
-                tabsOrientation={tabsOrientation}
-            >
+            <TabPanel value={tabIndex} index={tabIndicesById['dictionary-settings']} tabsOrientation={tabsOrientation}>
                 <FormGroup className={classes.formGroup}>
                     <Typography variant="h6" gutterBottom>
                         {t('settings.dictionary')}
@@ -1759,18 +1726,9 @@ export default function SettingsForm({
                     >
                         Get Recommended Dictionary (Jitendex)
                     </Button>
-                    <Button
-                        variant="outlined"
-                        onClick={handleImportDictionary}
-                        style={{ marginBottom: 8 }}
-                    >
+                    <Button variant="outlined" onClick={handleImportDictionary} style={{ marginBottom: 8 }}>
                         {t('settings.importDictionary')}
                     </Button>
-                    <DictionaryImportProgress
-                        visible={dictionaryImportProgress.visible}
-                        stepInfo={dictionaryImportProgress.stepInfo}
-                        percentage={dictionaryImportProgress.percentage}
-                    />
                 </FormGroup>
             </TabPanel>
             <TabPanel
