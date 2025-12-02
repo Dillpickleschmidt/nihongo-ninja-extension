@@ -33,13 +33,25 @@ export interface KagomeToken {
     readonly features: string[];
 }
 
-export interface GrammarMatch {
+export interface PatternMatch {
     readonly pattern_name: string;
     readonly confidence: number;
     readonly start_char: number;
     readonly end_char: number;
     readonly category: 'Construction' | 'Conjugation';
-    readonly conjugation_pattern: string;
+}
+
+export interface CompoundSpan {
+    readonly start: number; // token index (inclusive)
+    readonly end: number; // token index (inclusive)
+    readonly text: string; // dictionary form (e.g., "目が覚める")
+}
+
+/** Result from WASM analyze/analyze_batch - combined tokens, grammar matches, and compound spans */
+export interface AnalysisResult {
+    readonly tokens: KagomeToken[];
+    readonly grammar_matches: PatternMatch[];
+    readonly compound_spans: CompoundSpan[];
 }
 
 export interface SubtitleModel {
@@ -51,7 +63,8 @@ export interface SubtitleModel {
     readonly originalEnd: number;
     readonly track: number;
     readonly kagomeTokens?: KagomeToken[];
-    readonly grammarMatches?: GrammarMatch[];
+    readonly grammarMatches?: PatternMatch[];
+    readonly compoundSpans?: CompoundSpan[];
 }
 
 export interface CardTextFieldValues {

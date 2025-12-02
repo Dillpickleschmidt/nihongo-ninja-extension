@@ -62,6 +62,7 @@ import ClearCopyHistoryHandler from '@/handlers/asbplayerv2/clear-copy-history-h
 import SaveCopyHistoryHandler from '@/handlers/asbplayerv2/save-copy-history-handler';
 import { loadKagomeWasm } from '@/handlers/kagome/kagome-analysis-handler';
 import { loadGrammarWasm, analyze_batch } from '@/handlers/grammar/grammar-analysis-handler';
+import type { AnalysisResult, KagomeToken, PatternMatch, CompoundSpan } from '@project/common/src/model';
 import DictionaryLookupHandler from '@/handlers/dictionary/dictionary-lookup-handler';
 import {
     DictionaryImportHandler,
@@ -164,6 +165,12 @@ export default defineBackground(() => {
         readonly texts: string[];
     }
 
+    interface JapaneseAnalysisResult {
+        tokens: KagomeToken[];
+        grammarMatches: PatternMatch[];
+        compoundSpans: CompoundSpan[];
+    }
+
     class JapaneseAnalysisHandler {
         get sender() {
             return 'asbplayer-video';
@@ -197,7 +204,7 @@ export default defineBackground(() => {
             return true;
         }
 
-        private async analyzeBatch(texts: string[]): Promise<Array<{ tokens: any[]; grammarMatches: any[] }>> {
+        private async analyzeBatch(texts: string[]): Promise<JapaneseAnalysisResult[]> {
             // Filter to only Japanese texts
             const japaneseIndices: number[] = [];
             const japaneseTexts: string[] = [];
@@ -211,7 +218,7 @@ export default defineBackground(() => {
 
             // If no Japanese texts, return empty results
             if (japaneseTexts.length === 0) {
-                return texts.map(() => ({ tokens: [], grammarMatches: [] }));
+                return texts.map(() => ({ tokens: [], grammarMatches: [], compoundSpans: [] }));
             }
 
             // Load Kagome WASM and tokenize
@@ -223,20 +230,23 @@ export default defineBackground(() => {
 
             const allTokenArrays = (self as any).kagome_tokenize_batch(japaneseTexts);
 
-            // Load Grammar WASM and analyze
+            // Load Grammar WASM and analyze (now returns combined tokens, grammar matches, and compound spans)
             await loadGrammarWasm();
-            const grammarResults = analyze_batch(allTokenArrays);
+            const analysisResults: AnalysisResult[] = analyze_batch(japaneseTexts, allTokenArrays);
 
             // Map results back to original positions
-            const results: Array<{ tokens: any[]; grammarMatches: any[] }> = texts.map(() => ({
+            const results: JapaneseAnalysisResult[] = texts.map(() => ({
                 tokens: [],
                 grammarMatches: [],
+                compoundSpans: [],
             }));
 
             japaneseIndices.forEach((originalIndex, japaneseIndex) => {
+                const analysisResult = analysisResults[japaneseIndex];
                 results[originalIndex] = {
-                    tokens: allTokenArrays[japaneseIndex] || [],
-                    grammarMatches: grammarResults[japaneseIndex] || [],
+                    tokens: analysisResult?.tokens || [],
+                    grammarMatches: analysisResult?.grammar_matches || [],
+                    compoundSpans: analysisResult?.compound_spans || [],
                 };
             });
 

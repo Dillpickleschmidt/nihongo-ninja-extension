@@ -1570,13 +1570,16 @@ export default class Binding {
             const response = await browser.runtime.sendMessage(command);
 
             if (response && response.results) {
-                // Update all subtitles with tokens and grammar matches
+                // Update all subtitles with tokens, grammar matches, and compound spans
                 response.results.forEach((result: any, index: number) => {
                     if (result.tokens) {
                         (japaneseSubtitles[index] as any).kagomeTokens = result.tokens;
                     }
                     if (result.grammarMatches) {
                         (japaneseSubtitles[index] as any).grammarMatches = result.grammarMatches;
+                    }
+                    if (result.compoundSpans) {
+                        (japaneseSubtitles[index] as any).compoundSpans = result.compoundSpans;
                     }
                 });
 

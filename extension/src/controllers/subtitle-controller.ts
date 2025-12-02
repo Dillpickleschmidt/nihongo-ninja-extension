@@ -24,11 +24,7 @@ import {
     OffsetAnchor,
 } from '../services/element-overlay';
 import { SubtitleTokenPopupManager } from '@project/common/src/subtitle-token-popup-manager';
-import {
-    selectAndLayerGrammarPatterns,
-    buildGrammarEnhancedHTML,
-    combineConjugationTokens,
-} from '@project/common/src/grammar-pattern-renderer';
+import { selectAndLayerGrammarPatterns, buildGrammarEnhancedHTML } from '@project/common/src/grammar-pattern-renderer';
 
 // Global token map for popup lookup (avoids JSON.stringify in HTML)
 declare global {
@@ -582,22 +578,18 @@ export default class SubtitleController {
         window.subtitlesByIndex!.set(subtitle.index, subtitle);
 
         // If we have kagome tokens, build grammar-enhanced HTML
+        // Note: kagomeTokens are now pre-combined by the Rust grammar-lib
         if (kagomeTokens && kagomeTokens.length > 0) {
-            // Combine tokens that are part of conjugation patterns
-            const combinedTokens = grammarMatches
-                ? combineConjugationTokens(text, kagomeTokens, grammarMatches)
-                : kagomeTokens;
-
-            // Store combined tokens for this subtitle in global map (initialized in constructor)
-            window.kagomeTokensBySubtitle!.set(subtitle.index, combinedTokens);
+            // Store tokens for this subtitle in global map (initialized in constructor)
+            window.kagomeTokensBySubtitle!.set(subtitle.index, kagomeTokens);
 
             // Select and layer grammar patterns
             const layeredPatterns = grammarMatches
-                ? selectAndLayerGrammarPatterns(grammarMatches, combinedTokens, subtitle.index)
+                ? selectAndLayerGrammarPatterns(grammarMatches, kagomeTokens, subtitle.index)
                 : [];
 
             // Build HTML with interleaved token and grammar spans
-            const enhancedHtml = buildGrammarEnhancedHTML(text, combinedTokens, layeredPatterns, subtitle.index);
+            const enhancedHtml = buildGrammarEnhancedHTML(text, kagomeTokens, layeredPatterns, subtitle.index);
 
             return this._buildTextHtml(enhancedHtml, track);
         }

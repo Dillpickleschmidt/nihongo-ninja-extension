@@ -1,4 +1,4 @@
-import init, { analyze_batch, analyze_single, init as grammarInit } from '../../../public/grammar/grammar_wasm';
+import init, { analyze, analyze_batch, init as grammarInit } from '../../../public/grammar/grammar_wasm';
 
 let grammarLoaded = false;
 let loadPromise: Promise<void> | null = null;
@@ -41,4 +41,4 @@ export async function loadGrammarWasm(): Promise<void> {
 /**
  * Re-export grammar analysis functions for easy access
  */
-export { analyze_batch, analyze_single };
+export { analyze, analyze_batch };
