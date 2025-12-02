@@ -157,14 +157,19 @@ export function combineConjugationTokens(
             const combinedSurface = text.substring(pattern.start_char, pattern.end_char);
             const firstToken = containedTokens[0];
 
+            // Prefer verb POS if any token in the group is a verb (e.g., 勉強します)
+            // This ensures suru-verbs show as verbs, not nouns
+            const verbToken = containedTokens.find((t) => t.pos[0] === '動詞');
+            const referenceToken = verbToken || firstToken;
+
             result.push({
                 id: firstToken.id,
                 start: pattern.start_char,
                 end: pattern.end_char,
                 surface: combinedSurface,
                 class: firstToken.class,
-                pos: firstToken.pos,
-                base_form: firstToken.base_form,
+                pos: referenceToken.pos,
+                base_form: referenceToken.base_form,
                 reading: firstToken.reading,
                 pronunciation: firstToken.pronunciation,
                 features: firstToken.features,
